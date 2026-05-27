@@ -84,7 +84,7 @@ class _TelaInicialState extends State<TelaInicial> {
     for (var t in despesas) { agrupado[t.categoria] = (agrupado[t.categoria] ?? 0.0) + t.valor; }
 
     return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      margin: const EdgeInsets.only(bottom: 16.0, top: 8.0),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -126,6 +126,8 @@ class _TelaInicialState extends State<TelaInicial> {
         : transacoesDaAba.where((t) => t.categoria == _filtroCategoriaAtivo).toList();
 
     listaFinal.sort((a, b) => b.data.compareTo(a.data));
+    
+    final bool temGrafico = mostrarGrafico && transacoesDaAba.isNotEmpty;
 
     return Column(
       children: [
@@ -149,16 +151,20 @@ class _TelaInicialState extends State<TelaInicial> {
           ),
         ),
         
-        if (mostrarGrafico && transacoesDaAba.isNotEmpty) _buildGraficoResumo(transacoesDaAba),
-
         Expanded(
-          child: listaFinal.isEmpty
+          child: (listaFinal.isEmpty && !temGrafico)
               ? const Center(child: Text('Nenhuma transação neste mês.', style: TextStyle(color: Colors.grey)))
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  itemCount: listaFinal.length,
+                  itemCount: listaFinal.length + (temGrafico ? 1 : 0),
                   itemBuilder: (context, index) {
-                    final transacao = listaFinal[index];
+                    
+
+                    if (temGrafico && index == 0) {
+                      return _buildGraficoResumo(transacoesDaAba);
+                    }
+
+                    final transacao = listaFinal[temGrafico ? index - 1 : index];
 
                     return Dismissible(
                       key: Key(transacao.id),
