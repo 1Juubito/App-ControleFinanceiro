@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   extended_masked_text: ^3.0.1
   intl: ^0.20.2
+  shared_preferences: ^2.5.5
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

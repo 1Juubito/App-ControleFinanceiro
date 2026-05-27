@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'telas/tela_inicial.dart';
 
 void main() {
-  runApp(const MeuControleFinanceiroApp());
+  runApp(const MeuApp());
 }
 
-class MeuControleFinanceiroApp extends StatelessWidget {
-  const MeuControleFinanceiroApp({super.key});
+class MeuApp extends StatelessWidget {
+  const MeuApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +18,16 @@ class MeuControleFinanceiroApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
+      
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('pt', 'BR'),
+      ],
+      
       home: const TelaInicial(),
     );
   }
