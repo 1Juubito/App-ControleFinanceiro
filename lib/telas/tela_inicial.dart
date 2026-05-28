@@ -1,12 +1,11 @@
-import 'tela_metas.dart';
-import 'tela_relatorios.dart';
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'tela_cadastro.dart';
+import 'tela_metas.dart';
+import 'tela_relatorios.dart';
 import '../modelos/transacao.dart';
 
 class TelaInicial extends StatefulWidget {
@@ -54,21 +53,23 @@ class _TelaInicialState extends State<TelaInicial> {
     _carregarDados();
   }
 
-  Future<void> _carregarDados() async {
-    final prefs = await SharedPreferences.getInstance();
-    final dadosString = prefs.getString('transacoes_salvas');
-    if (dadosString != null) {
-      final List<dynamic> dadosDecodificados = jsonDecode(dadosString);
+  void _carregarDados() {
+    final box = Hive.box('cofre_financeiro');
+    final dados = box.get('transacoes_salvas');
+    if (dados != null) {
       setState(() {
-        _transacoesGlobais = dadosDecodificados.map((item) => Transacao.fromJson(item)).toList();
+        _transacoesGlobais = (dados as List).map((item) {
+          final mapaConvertido = Map<String, dynamic>.from(item);
+          return Transacao.fromJson(mapaConvertido);
+        }).toList();
       });
     }
   }
 
-  Future<void> _salvarDados() async {
-    final prefs = await SharedPreferences.getInstance();
-    final dadosString = jsonEncode(_transacoesGlobais.map((t) => t.toJson()).toList());
-    await prefs.setString('transacoes_salvas', dadosString);
+  void _salvarDados() {
+    final box = Hive.box('cofre_financeiro');
+    final dadosNativos = _transacoesGlobais.map((t) => t.toJson()).toList();
+    box.put('transacoes_salvas', dadosNativos);
   }
 
   List<Transacao> get _transacoesDoMes {
@@ -138,7 +139,7 @@ class _TelaInicialState extends State<TelaInicial> {
               customBorder: const CircleBorder(),
               splashColor: cor.withOpacity(0.3),
               child: Padding(
-                padding: const EdgeInsets.all(14.0),
+                padding: const EdgeInsets.all(14.0), 
                 child: Icon(icone, color: cor, size: 24),
               ),
             ),
@@ -147,6 +148,48 @@ class _TelaInicialState extends State<TelaInicial> {
         const SizedBox(height: 8),
         Text(titulo, style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
       ],
+    );
+  }
+
+  Widget _buildCardMetas() {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey[200]!)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const TelaMetas()));
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
+                    child: Icon(Icons.savings_rounded, color: Colors.blue[700], size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  const Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Meus Cofrinhos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                      SizedBox(height: 2),
+                      Text('Acompanhe suas metas', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+              Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -282,48 +325,6 @@ class _TelaInicialState extends State<TelaInicial> {
       ),
     );
   }
-  
-  Widget _buildCardMetas() {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey[200]!)),
-      child: InkWell(
-        onTap: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const TelaMetas()));
-        },
-        borderRadius: BorderRadius.circular(24),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: Colors.blue[50], shape: BoxShape.circle),
-                    child: Icon(Icons.savings_rounded, color: Colors.blue[700], size: 24),
-                  ),
-                  const SizedBox(width: 16),
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Meus Cofrinhos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                      SizedBox(height: 2),
-                      Text('Acompanhe suas metas', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    ],
-                  ),
-                ],
-              ),
-              Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildCardLancamentos() {
     final listaFiltrada = _filtroCategoriaAtivo == 'Todas' 
@@ -362,8 +363,8 @@ class _TelaInicialState extends State<TelaInicial> {
             else
               ListView.builder(
                 padding: EdgeInsets.zero,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true, 
+                physics: const NeverScrollableScrollPhysics(), 
                 itemCount: listaFiltrada.length,
                 itemBuilder: (context, index) {
                   final transacao = listaFiltrada[index];
@@ -415,6 +416,24 @@ class _TelaInicialState extends State<TelaInicial> {
                           spacing: 6.0, 
                           children: [
                             Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w500)),
+                            if (isAgendado)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange[50], 
+                                  borderRadius: BorderRadius.circular(6), 
+                                  border: Border.all(color: Colors.orange[200]!)
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.schedule_rounded, size: 10, color: Colors.orange[700]),
+                                    const SizedBox(width: 4),
+                                    Text('AGENDADO', style: TextStyle(color: Colors.orange[700], fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                  ],
+                                ),
+                              ),
+
                             if (transacao.formaPagamento == 'Vale Alimentação')
                               Icon(Icons.fastfood, size: 11, color: Colors.orange[700]),
                             if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
@@ -511,7 +530,7 @@ class _TelaInicialState extends State<TelaInicial> {
                                       Icon(Icons.account_balance_wallet_rounded, size: 14, color: Colors.green[200]),
                                       const SizedBox(width: 6),
                                       const Text('Disponível', style: TextStyle(fontSize: 12, color: Colors.white70)),
-                                  ],
+                                    ],
                                   ),
                                   const SizedBox(height: 8),
                                   FittedBox(
@@ -637,7 +656,8 @@ class _TelaInicialState extends State<TelaInicial> {
                 _buildCardMetas(),
                 _buildCardLancamentos(),
                 _buildCardGrafico(_transacoesDoMes),
-                const SizedBox(height: 100),
+
+                const SizedBox(height: 100), 
               ],
             ),
           ),
@@ -658,7 +678,7 @@ class _TelaInicialState extends State<TelaInicial> {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_menuAberto) ...[
-          Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [

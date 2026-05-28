@@ -1,6 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:extended_masked_text/extended_masked_text.dart';
 import 'package:intl/intl.dart';
 import '../modelos/meta.dart';
@@ -22,21 +21,23 @@ class _TelaMetasState extends State<TelaMetas> {
     _carregarMetas();
   }
 
-  Future<void> _carregarMetas() async {
-    final prefs = await SharedPreferences.getInstance();
-    final dadosString = prefs.getString('metas_salvas');
-    if (dadosString != null) {
-      final List<dynamic> dadosDecodificados = jsonDecode(dadosString);
+  void _carregarMetas() {
+    final box = Hive.box('cofre_financeiro');
+    final dados = box.get('metas_salvas');
+    if (dados != null) {
       setState(() {
-        _metas = dadosDecodificados.map((item) => MetaEconomia.fromJson(item)).toList();
+        _metas = (dados as List).map((item) {
+          final mapaConvertido = Map<String, dynamic>.from(item);
+          return MetaEconomia.fromJson(mapaConvertido);
+        }).toList();
       });
     }
   }
 
-  Future<void> _salvarMetas() async {
-    final prefs = await SharedPreferences.getInstance();
-    final dadosString = jsonEncode(_metas.map((m) => m.toJson()).toList());
-    await prefs.setString('metas_salvas', dadosString);
+  void _salvarMetas() {
+    final box = Hive.box('cofre_financeiro');
+    final dadosNativos = _metas.map((m) => m.toJson()).toList();
+    box.put('metas_salvas', dadosNativos);
   }
 
   void _abrirDialogNovaMeta() {
