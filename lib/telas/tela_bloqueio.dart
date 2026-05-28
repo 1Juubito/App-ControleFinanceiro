@@ -91,7 +91,7 @@ class _TelaBloqueioState extends State<TelaBloqueio> {
               const SizedBox(height: 32),
               
               const Text(
-                'Juubito Finanças',
+                'Allan Finanças',
                 style: TextStyle(
                   fontSize: 28, 
                   color: Colors.white, 

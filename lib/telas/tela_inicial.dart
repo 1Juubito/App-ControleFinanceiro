@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,8 @@ class _TelaInicialState extends State<TelaInicial> {
   
   DateTime _mesAtual = DateTime.now();
   final List<String> _nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+  bool _menuAberto = false;
 
   @override
   void initState() {
@@ -56,20 +59,10 @@ class _TelaInicialState extends State<TelaInicial> {
     return !dataT.isAfter(dataH);
   }
 
-  double get _totalReceitas => _transacoesDoMes
-      .where((t) => t.isReceita && _isEfetivada(t.data))
-      .fold(0.0, (s, t) => s + t.valor);
-  
-  double get _totalDespesasAVista => _transacoesDoMes
-      .where((t) => !t.isReceita && t.formaPagamento != 'Cartão de Crédito' && _isEfetivada(t.data))
-      .fold(0.0, (s, t) => s + t.valor);
-  
-  double get _totalCartao => _transacoesDoMes
-      .where((t) => !t.isReceita && t.formaPagamento == 'Cartão de Crédito')
-      .fold(0.0, (s, t) => s + t.valor);
-  
+  double get _totalReceitas => _transacoesDoMes.where((t) => t.isReceita && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
+  double get _totalDespesasAVista => _transacoesDoMes.where((t) => !t.isReceita && t.formaPagamento != 'Cartão de Crédito' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
+  double get _totalCartao => _transacoesDoMes.where((t) => !t.isReceita && t.formaPagamento == 'Cartão de Crédito').fold(0.0, (s, t) => s + t.valor);
   double get _saldoConta => _totalReceitas - _totalDespesasAVista;
-  
   double get _totalDespesasGeral => _transacoesDoMes.where((t) => !t.isReceita).fold(0.0, (s, t) => s + t.valor);
 
   void _mudarMes(int incremento) {
@@ -92,6 +85,64 @@ class _TelaInicialState extends State<TelaInicial> {
       case 'Freelance': return Icons.laptop_mac;
       default: return Icons.category;
     }
+  }
+
+  void _encaminharParaCadastro({bool? iniciarComoReceita, String? formaPagamento}) async {
+    setState(() { _menuAberto = false; }); 
+    
+    final transacaoRecebida = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TelaCadastro(iniciarComoReceita: iniciarComoReceita, iniciarFormaPagamento: formaPagamento),
+      ),
+    );
+
+    if (transacaoRecebida != null) {
+      setState(() {
+        _transacoesGlobais.addAll(transacaoRecebida is List ? transacaoRecebida as Iterable<Transacao> : [transacaoRecebida as Transacao]);
+        _salvarDados();
+      });
+    }
+  }
+
+  Widget _buildBotaoMenuPremium({required String titulo, required IconData icone, required Color cor, required VoidCallback onTap}) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(30),
+        splashColor: cor.withOpacity(0.2),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [
+              BoxShadow(
+                color: cor.withOpacity(0.25),
+                blurRadius: 15,
+                offset: const Offset(0, 5),
+              )
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: cor.withOpacity(0.15), shape: BoxShape.circle),
+                child: Icon(icone, color: cor, size: 22),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                titulo, 
+                style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.3),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildGraficoResumo(List<Transacao> despesas) {
@@ -175,11 +226,8 @@ class _TelaInicialState extends State<TelaInicial> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   itemCount: listaFinal.length + (temGrafico ? 1 : 0),
                   itemBuilder: (context, index) {
-                    
                     if (temGrafico && index == 0) return _buildGraficoResumo(transacoesDaAba);
-
                     final transacao = listaFinal[temGrafico ? index - 1 : index];
-                    
                     final bool isAgendado = !_isEfetivada(transacao.data);
                     
                     Color corValor = transacao.isReceita ? Colors.green : Colors.red;
@@ -213,13 +261,11 @@ class _TelaInicialState extends State<TelaInicial> {
                           title: Text(transacao.titulo, style: const TextStyle(fontWeight: FontWeight.w500)),
                           subtitle: Wrap(
                             crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6.0,
+                            spacing: 6.0, 
                             children: [
                               Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                              
                               if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
                                 const Icon(Icons.credit_card, size: 14, color: Colors.blue),
-                              
                               if (isAgendado) 
                                 Row(
                                   mainAxisSize: MainAxisSize.min,
@@ -271,149 +317,195 @@ class _TelaInicialState extends State<TelaInicial> {
         elevation: 0,
         centerTitle: true,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Container(
-            color: Colors.green[700], 
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 30), onPressed: () => _mudarMes(-1)),
-                SizedBox(
-                  width: 150, 
-                  child: Text(
-                    '${_nomesMeses[_mesAtual.month - 1]} ${_mesAtual.year}',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white, size: 30), onPressed: () => _mudarMes(1)),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Saldo em Conta', style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 8),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              _formatador.format(_saldoConta), 
-                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _saldoConta >= 0 ? Colors.black87 : Colors.red),
-                            ),
-                          ),
-                        ],
+          Column(
+            children: [
+              Container(
+                color: Colors.green[700], 
+                padding: const EdgeInsets.only(bottom: 16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 30), onPressed: () => _mudarMes(-1)),
+                    SizedBox(
+                      width: 150, 
+                      child: Text(
+                        '${_nomesMeses[_mesAtual.month - 1]} ${_mesAtual.year}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ),
+                    IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white, size: 30), onPressed: () => _mudarMes(1)),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                
-                Expanded(
-                  child: Card(
-                    color: Colors.blue[600],
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Fatura Aberta', style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500)),
-                          const SizedBox(height: 8),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              _formatador.format(_totalCartao), 
-                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                            ),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Card(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Saldo em Conta', style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _formatador.format(_saldoConta), 
+                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _saldoConta >= 0 ? Colors.black87 : Colors.red),
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Card(
+                        color: Colors.blue[600],
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Fatura Aberta', style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 8),
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  _formatador.format(_totalCartao), 
+                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.arrow_upward, color: Colors.green, size: 16),
-                    const SizedBox(width: 4),
-                    Text('Entradas: ${_formatador.format(_totalReceitas)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.arrow_downward, color: Colors.red, size: 16),
-                    const SizedBox(width: 4),
-                    Text('Saídas Previstas: ${_formatador.format(_totalDespesasGeral)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
-          Expanded(
-            child: DefaultTabController(
-              length: 3, 
-              child: Column(
-                children: [
-                  TabBar(
-                    labelColor: Colors.green, unselectedLabelColor: Colors.grey, indicatorColor: Colors.green,
-                    onTap: (index) => setState(() { _filtroCategoriaAtivo = 'Todas'; }),
-                    tabs: const [Tab(text: 'Todas'), Tab(text: 'Receitas'), Tab(text: 'Despesas')],
-                  ),
-                  Expanded(
-                    child: TabBarView(
-                      physics: const NeverScrollableScrollPhysics(), 
+                    Row(
                       children: [
-                        _buildListaTransacoes(_transacoesDoMes), 
-                        _buildListaTransacoes(_transacoesDoMes.where((t) => t.isReceita).toList()), 
-                        _buildListaTransacoes(_transacoesDoMes.where((t) => !t.isReceita).toList(), mostrarGrafico: true), 
+                        const Icon(Icons.arrow_upward, color: Colors.green, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Entradas: ${_formatador.format(_totalReceitas)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                       ],
                     ),
-                  ),
-                ],
+                    Row(
+                      children: [
+                        const Icon(Icons.arrow_downward, color: Colors.red, size: 16),
+                        const SizedBox(width: 4),
+                        Text('Saídas Previstas: ${_formatador.format(_totalDespesasGeral)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+              
+              Expanded(
+                child: DefaultTabController(
+                  length: 3, 
+                  child: Column(
+                    children: [
+                      TabBar(
+                        labelColor: Colors.green, unselectedLabelColor: Colors.grey, indicatorColor: Colors.green,
+                        onTap: (index) => setState(() { _filtroCategoriaAtivo = 'Todas'; }),
+                        tabs: const [Tab(text: 'Todas'), Tab(text: 'Receitas'), Tab(text: 'Despesas')],
+                      ),
+                      Expanded(
+                        child: TabBarView(
+                          physics: const NeverScrollableScrollPhysics(), 
+                          children: [
+                            _buildListaTransacoes(_transacoesDoMes), 
+                            _buildListaTransacoes(_transacoesDoMes.where((t) => t.isReceita).toList()), 
+                            _buildListaTransacoes(_transacoesDoMes.where((t) => !t.isReceita).toList(), mostrarGrafico: true), 
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          if (_menuAberto)
+            GestureDetector(
+              onTap: () => setState(() { _menuAberto = false; }),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
+                child: Container(
+                  color: Colors.black.withOpacity(0.3),
+                ),
+              ),
+            ),
+        ],
+      ),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_menuAberto) ...[
+            _buildBotaoMenuPremium(
+              titulo: 'Nova Receita',
+              icone: Icons.arrow_upward_rounded,
+              cor: Colors.green[600]!,
+              onTap: () => _encaminharParaCadastro(iniciarComoReceita: true),
+            ),
+            const SizedBox(height: 16),
+            _buildBotaoMenuPremium(
+              titulo: 'Despesa À Vista',
+              icone: Icons.arrow_downward_rounded,
+              cor: Colors.red[500]!,
+              onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Pix/Dinheiro'),
+            ),
+            const SizedBox(height: 16),
+            _buildBotaoMenuPremium(
+              titulo: 'Gasto no Cartão',
+              icone: Icons.credit_card_rounded,
+              cor: Colors.blue[600]!,
+              onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Cartão de Crédito'),
+            ),
+            const SizedBox(height: 24),
+          ],
+
+          FloatingActionButton(
+            heroTag: 'btn_principal',
+            onPressed: () {
+              setState(() {
+                _menuAberto = !_menuAberto;
+              });
+            },
+            backgroundColor: _menuAberto ? Colors.red[400] : Colors.green[700],
+            elevation: _menuAberto ? 0 : 6,
+            child: AnimatedRotation(
+              turns: _menuAberto ? 0.125 : 0, 
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInOutBack,
+              child: const Icon(Icons.add, color: Colors.white, size: 32),
             ),
           ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final transacaoRecebida = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const TelaCadastro()),
-          );
-          if (transacaoRecebida != null) {
-            setState(() {
-              _transacoesGlobais.addAll(transacaoRecebida is List ? transacaoRecebida as Iterable<Transacao> : [transacaoRecebida as Transacao]);
-              _salvarDados();
-            });
-          }
-        },
-        backgroundColor: Colors.green[700],
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
