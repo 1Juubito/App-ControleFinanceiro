@@ -74,16 +74,16 @@ class _TelaInicialState extends State<TelaInicial> {
 
   IconData _getIconeCategoria(String categoria) {
     switch (categoria) {
-      case 'Alimentação': return Icons.restaurant;
-      case 'Transporte': return Icons.directions_car;
-      case 'Moradia': return Icons.home;
-      case 'Saúde': return Icons.medical_services;
-      case 'Lazer': return Icons.sports_esports;
-      case 'Cuidados Pessoais': return Icons.content_cut;
-      case 'Salário': return Icons.work;
-      case 'Investimentos': return Icons.monetization_on;
-      case 'Freelance': return Icons.laptop_mac;
-      default: return Icons.category;
+      case 'Alimentação': return Icons.restaurant_rounded;
+      case 'Transporte': return Icons.directions_car_rounded;
+      case 'Moradia': return Icons.home_rounded;
+      case 'Saúde': return Icons.medical_services_rounded;
+      case 'Lazer': return Icons.sports_esports_rounded;
+      case 'Cuidados Pessoais': return Icons.content_cut_rounded;
+      case 'Salário': return Icons.work_rounded;
+      case 'Investimentos': return Icons.monetization_on_rounded;
+      case 'Freelance': return Icons.laptop_mac_rounded;
+      default: return Icons.category_rounded;
     }
   }
 
@@ -118,11 +118,7 @@ class _TelaInicialState extends State<TelaInicial> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
-              BoxShadow(
-                color: cor.withOpacity(0.25),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
-              )
+              BoxShadow(color: cor.withOpacity(0.25), blurRadius: 15, offset: const Offset(0, 5))
             ],
           ),
           child: Row(
@@ -134,10 +130,7 @@ class _TelaInicialState extends State<TelaInicial> {
                 child: Icon(icone, color: cor, size: 22),
               ),
               const SizedBox(width: 16),
-              Text(
-                titulo, 
-                style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold, fontSize: 16, letterSpacing: 0.3),
-              ),
+              Text(titulo, style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold, fontSize: 16)),
             ],
           ),
         ),
@@ -153,32 +146,33 @@ class _TelaInicialState extends State<TelaInicial> {
     for (var t in despesas) { agrupado[t.categoria] = (agrupado[t.categoria] ?? 0.0) + t.valor; }
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16.0, top: 8.0),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 24.0, top: 8.0),
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey[200]!)),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Divisão de Gastos do Mês', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87)),
-            const SizedBox(height: 12),
+            Text('Divisão de Gastos', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey[800])),
+            const SizedBox(height: 16),
             ...agrupado.entries.map((entry) {
               final percentual = entry.value / totalGasto;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 10.0),
+                padding: const EdgeInsets.only(bottom: 14.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(entry.key, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
-                        Text('${(percentual * 100).toStringAsFixed(1)}% (${_formatador.format(entry.value)})', style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+                        Text(entry.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        Text('${(percentual * 100).toStringAsFixed(1)}% (${_formatador.format(entry.value)})', style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.bold)),
                       ],
                     ),
-                    const SizedBox(height: 4),
-                    LinearProgressIndicator(value: percentual, backgroundColor: Colors.grey[200], color: Colors.red[400], minHeight: 6, borderRadius: BorderRadius.circular(3)),
+                    const SizedBox(height: 6),
+                    LinearProgressIndicator(value: percentual, backgroundColor: Colors.grey[100], color: Colors.red[400], minHeight: 8, borderRadius: BorderRadius.circular(4)),
                   ],
                 ),
               );
@@ -201,7 +195,7 @@ class _TelaInicialState extends State<TelaInicial> {
       children: [
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
           child: Row(
             children: ['Todas', 'Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Cuidados Pessoais', 'Salário', 'Investimentos', 'Freelance', 'Outros'].map((categoria) {
               final isSelecionado = _filtroCategoriaAtivo == categoria;
@@ -210,8 +204,12 @@ class _TelaInicialState extends State<TelaInicial> {
                 child: FilterChip(
                   label: Text(categoria),
                   selected: isSelecionado,
-                  selectedColor: Colors.green[100],
+                  selectedColor: Colors.green[50],
+                  labelStyle: TextStyle(color: isSelecionado ? Colors.green[800] : Colors.grey[700], fontWeight: isSelecionado ? FontWeight.bold : FontWeight.normal),
                   checkmarkColor: Colors.green[700],
+                  backgroundColor: Colors.white,
+                  side: BorderSide(color: isSelecionado ? Colors.green[300]! : Colors.grey[200]!),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   onSelected: (selecionado) { setState(() { _filtroCategoriaAtivo = selecionado ? categoria : 'Todas'; }); },
                 ),
               );
@@ -221,27 +219,27 @@ class _TelaInicialState extends State<TelaInicial> {
         
         Expanded(
           child: (listaFinal.isEmpty && !temGrafico)
-              ? const Center(child: Text('Nenhuma transação neste mês.', style: TextStyle(color: Colors.grey)))
+              ? const Center(child: Text('Nenhum lançamento por aqui.', style: TextStyle(color: Colors.grey, fontSize: 15)))
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
                   itemCount: listaFinal.length + (temGrafico ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (temGrafico && index == 0) return _buildGraficoResumo(transacoesDaAba);
                     final transacao = listaFinal[temGrafico ? index - 1 : index];
                     final bool isAgendado = !_isEfetivada(transacao.data);
                     
-                    Color corValor = transacao.isReceita ? Colors.green : Colors.red;
-                    if (isAgendado) corValor = Colors.orange;
+                    Color corValor = transacao.isReceita ? Colors.green[600]! : Colors.red[600]!;
+                    if (isAgendado) corValor = Colors.orange[700]!;
 
                     return Dismissible(
                       key: Key(transacao.id),
                       direction: DismissDirection.endToStart,
                       background: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        margin: const EdgeInsets.symmetric(vertical: 6),
                         alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.only(right: 20),
-                        decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
-                        child: const Icon(Icons.delete, color: Colors.white, size: 30),
+                        padding: const EdgeInsets.only(right: 24),
+                        decoration: BoxDecoration(color: Colors.red[100], borderRadius: BorderRadius.circular(20)),
+                        child: Icon(Icons.delete_sweep_rounded, color: Colors.red[700], size: 28),
                       ),
                       onDismissed: (direction) {
                         setState(() {
@@ -249,37 +247,61 @@ class _TelaInicialState extends State<TelaInicial> {
                           _salvarDados();
                         });
                       },
-                      child: Card(
-                        elevation: 1,
-                        margin: const EdgeInsets.only(bottom: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))],
+                          border: Border.all(color: Colors.grey[100]!),
+                        ),
                         child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isAgendado ? Colors.orange[50] : (transacao.isReceita ? Colors.green[100] : Colors.red[100]),
-                            child: Icon(_getIconeCategoria(transacao.categoria), color: isAgendado ? Colors.orange : (transacao.isReceita ? Colors.green : Colors.red)),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                          leading: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isAgendado ? Colors.orange[50] : (transacao.isReceita ? Colors.green[50] : Colors.red[50]),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _getIconeCategoria(transacao.categoria), 
+                              color: isAgendado ? Colors.orange[700] : (transacao.isReceita ? Colors.green[700] : Colors.red[700]),
+                              size: 20,
+                            ),
                           ),
-                          title: Text(transacao.titulo, style: const TextStyle(fontWeight: FontWeight.w500)),
-                          subtitle: Wrap(
-                            crossAxisAlignment: WrapCrossAlignment.center,
-                            spacing: 6.0, 
-                            children: [
-                              Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                              if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
-                                const Icon(Icons.credit_card, size: 14, color: Colors.blue),
-                              if (isAgendado) 
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.schedule, size: 14, color: Colors.orange),
-                                    const SizedBox(width: 2),
-                                    const Text('Agendado', style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
-                                  ],
-                                ),
-                            ],
+                          title: Text(transacao.titulo, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 15)),
+                          subtitle: Padding(
+                            padding: const EdgeInsets.only(top: 4.0),
+                            child: Wrap(
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              spacing: 6.0, 
+                              children: [
+                                Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w500)),
+                                if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(6)),
+                                    child: Icon(Icons.credit_card_rounded, size: 12, color: Colors.blue[700]),
+                                  ),
+                                if (isAgendado) 
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(color: Colors.orange[50], borderRadius: BorderRadius.circular(6)),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.schedule_rounded, size: 12, color: Colors.orange[700]),
+                                        const SizedBox(width: 2),
+                                        Text('Futuro', style: TextStyle(color: Colors.orange[700], fontSize: 10, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                           trailing: Text(
                             '${transacao.isReceita ? '+' : '-'} ${_formatador.format(transacao.valor)}',
-                            style: TextStyle(color: corValor, fontWeight: FontWeight.bold, fontSize: 16),
+                            style: TextStyle(color: corValor, fontWeight: FontWeight.bold, fontSize: 15),
                           ),
                           onTap: () async {
                             final transacaoEditada = await Navigator.push(
@@ -309,111 +331,144 @@ class _TelaInicialState extends State<TelaInicial> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('Visão Geral', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.green[700],
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
+      backgroundColor: const Color(0xFFF8FAFC),
       body: Stack(
         children: [
           Column(
             children: [
               Container(
-                color: Colors.green[700], 
-                padding: const EdgeInsets.only(bottom: 16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF111111),
+                      Colors.green[900]!,
+                      Colors.green[800]!,
+                    ],
+                  ),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
+                child: Column(
                   children: [
-                    IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 30), onPressed: () => _mudarMes(-1)),
-                    SizedBox(
-                      width: 150, 
-                      child: Text(
-                        '${_nomesMeses[_mesAtual.month - 1]} ${_mesAtual.year}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Olá, Allan', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                            Text('Seu controle de gastos', style: TextStyle(color: Colors.green[200], fontSize: 13)),
+                          ],
+                        ),
+                        Container(
+                          decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                          child: Row(
+                            children: [
+                              IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 22), onPressed: () => _mudarMes(-1)),
+                              Text(
+                                '${_nomesMeses[_mesAtual.month - 1]}',
+                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                              ),
+                              IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white, size: 22), onPressed: () => _mudarMes(1)),
+                            ],
+                          ),
+                        )
+                      ],
                     ),
-                    IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white, size: 30), onPressed: () => _mudarMes(1)),
+                    const SizedBox(height: 28),
+
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.account_balance_wallet_rounded, size: 14, color: Colors.green[200]),
+                                    const SizedBox(width: 6),
+                                    const Text('Disponível', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _formatador.format(_saldoConta), 
+                                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _saldoConta >= 0 ? Colors.white : Colors.red[300]),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.07),
+                              borderRadius: BorderRadius.circular(24),
+                              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.credit_card_rounded, size: 14, color: Colors.blue[200]),
+                                    const SizedBox(width: 6),
+                                    const Text('Fatura Aberta', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w500)),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    _formatador.format(_totalCartao), 
+                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
 
               Padding(
-                padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Saldo em Conta', style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
-                              const SizedBox(height: 8),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  _formatador.format(_saldoConta), 
-                                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _saldoConta >= 0 ? Colors.black87 : Colors.red),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Card(
-                        color: Colors.blue[600],
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Fatura Aberta', style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500)),
-                              const SizedBox(height: 8),
-                              FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Text(
-                                  _formatador.format(_totalCartao), 
-                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                padding: const EdgeInsets.fromLTRB(28.0, 16.0, 28.0, 4.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.arrow_upward, color: Colors.green, size: 16),
+                        Icon(Icons.arrow_circle_up_rounded, color: Colors.green[600], size: 16),
                         const SizedBox(width: 4),
-                        Text('Entradas: ${_formatador.format(_totalReceitas)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text('Entradas: ${_formatador.format(_totalReceitas)}', style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     Row(
                       children: [
-                        const Icon(Icons.arrow_downward, color: Colors.red, size: 16),
+                        Icon(Icons.arrow_circle_down_rounded, color: Colors.red[400], size: 16),
                         const SizedBox(width: 4),
-                        Text('Saídas Previstas: ${_formatador.format(_totalDespesasGeral)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text('Previsão Saídas: ${_formatador.format(_totalDespesasGeral)}', style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],
@@ -426,9 +481,14 @@ class _TelaInicialState extends State<TelaInicial> {
                   child: Column(
                     children: [
                       TabBar(
-                        labelColor: Colors.green, unselectedLabelColor: Colors.grey, indicatorColor: Colors.green,
+                        labelColor: Colors.green[800], 
+                        unselectedLabelColor: Colors.grey[500], 
+                        indicatorColor: Colors.green[700],
+                        indicatorWeight: 3,
+                        indicatorSize: TabBarIndicatorSize.label,
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                         onTap: (index) => setState(() { _filtroCategoriaAtivo = 'Todas'; }),
-                        tabs: const [Tab(text: 'Todas'), Tab(text: 'Receitas'), Tab(text: 'Despesas')],
+                        tabs: const [Tab(text: 'Linha do Tempo'), Tab(text: 'Entradas'), Tab(text: 'Saídas')],
                       ),
                       Expanded(
                         child: TabBarView(
