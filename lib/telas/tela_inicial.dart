@@ -110,27 +110,28 @@ class _TelaInicialState extends State<TelaInicial> {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(30),
-        splashColor: cor.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+        splashColor: cor.withOpacity(0.3),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          width: 230,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(30),
+            color: const Color(0xFF1A1A1A),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: cor.withOpacity(0.6), width: 1.5), // Borda neon sutil
             boxShadow: [
-              BoxShadow(color: cor.withOpacity(0.25), blurRadius: 15, offset: const Offset(0, 5))
+              BoxShadow(color: cor.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 5))
             ],
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: cor.withOpacity(0.15), shape: BoxShape.circle),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: cor.withOpacity(0.15), borderRadius: BorderRadius.circular(14)),
                 child: Icon(icone, color: cor, size: 22),
               ),
               const SizedBox(width: 16),
-              Text(titulo, style: TextStyle(color: Colors.grey[800], fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(titulo, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.5)),
             ],
           ),
         ),
@@ -331,7 +332,7 @@ class _TelaInicialState extends State<TelaInicial> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFF8FAFC), 
       body: Stack(
         children: [
           Column(
@@ -343,7 +344,7 @@ class _TelaInicialState extends State<TelaInicial> {
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                     colors: [
-                      const Color(0xFF111111),
+                      const Color(0xFF111111), 
                       Colors.green[900]!,
                       Colors.green[800]!,
                     ],
@@ -529,21 +530,21 @@ class _TelaInicialState extends State<TelaInicial> {
             _buildBotaoMenuPremium(
               titulo: 'Nova Receita',
               icone: Icons.arrow_upward_rounded,
-              cor: Colors.green[600]!,
+              cor: Colors.greenAccent[400]!,
               onTap: () => _encaminharParaCadastro(iniciarComoReceita: true),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildBotaoMenuPremium(
               titulo: 'Despesa À Vista',
               icone: Icons.arrow_downward_rounded,
-              cor: Colors.red[500]!,
+              cor: Colors.redAccent[400]!,
               onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Pix/Dinheiro'),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
             _buildBotaoMenuPremium(
               titulo: 'Gasto no Cartão',
               icone: Icons.credit_card_rounded,
-              cor: Colors.blue[600]!,
+              cor: Colors.blueAccent[400]!,
               onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Cartão de Crédito'),
             ),
             const SizedBox(height: 24),
@@ -551,18 +552,14 @@ class _TelaInicialState extends State<TelaInicial> {
 
           FloatingActionButton(
             heroTag: 'btn_principal',
-            onPressed: () {
-              setState(() {
-                _menuAberto = !_menuAberto;
-              });
-            },
-            backgroundColor: _menuAberto ? Colors.red[400] : Colors.green[700],
-            elevation: _menuAberto ? 0 : 6,
+            onPressed: () => setState(() => _menuAberto = !_menuAberto),
+            backgroundColor: _menuAberto ? Colors.red[600] : const Color(0xFF111111),
+            elevation: _menuAberto ? 0 : 8,
             child: AnimatedRotation(
               turns: _menuAberto ? 0.125 : 0, 
               duration: const Duration(milliseconds: 250),
-              curve: Curves.easeInOutBack,
-              child: const Icon(Icons.add, color: Colors.white, size: 32),
+              curve: Curves.easeOutBack,
+              child: const Icon(Icons.add_rounded, color: Colors.white, size: 36),
             ),
           ),
         ],
