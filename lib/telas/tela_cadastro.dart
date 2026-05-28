@@ -201,6 +201,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
     final categoriasAtuais = _isReceita ? _categoriasReceita : _categoriasDespesa;
     if (!categoriasAtuais.contains(_categoriaSelecionada)) _categoriaSelecionada = categoriasAtuais.first;
 
+    final bool tecladoAberto = MediaQuery.of(context).viewInsets.bottom > 0;
+
     return Scaffold(
       backgroundColor: Colors.grey[50], 
       appBar: AppBar(
@@ -314,7 +316,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
       ),
       
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Padding(
+      
+      floatingActionButton: tecladoAberto ? null : Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: SizedBox(
           width: double.infinity,
