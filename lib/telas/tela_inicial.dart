@@ -59,11 +59,17 @@ class _TelaInicialState extends State<TelaInicial> {
     return !dataT.isAfter(dataH);
   }
 
-  double get _totalReceitas => _transacoesDoMes.where((t) => t.isReceita && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
-  double get _totalDespesasAVista => _transacoesDoMes.where((t) => !t.isReceita && t.formaPagamento != 'Cartão de Crédito' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
-  double get _totalCartao => _transacoesDoMes.where((t) => !t.isReceita && t.formaPagamento == 'Cartão de Crédito').fold(0.0, (s, t) => s + t.valor);
-  double get _saldoConta => _totalReceitas - _totalDespesasAVista;
-  double get _totalDespesasGeral => _transacoesDoMes.where((t) => !t.isReceita).fold(0.0, (s, t) => s + t.valor);
+  double get _saldoConta {
+    final receitasGlobais = _transacoesGlobais.where((t) => t.isReceita && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
+    final despesasGlobais = _transacoesGlobais.where((t) => !t.isReceita && t.formaPagamento != 'Cartão de Crédito' && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
+    return receitasGlobais - despesasGlobais;
+  }
+  
+  double get _saldoVale => _transacoesGlobais.where((t) => t.formaPagamento == 'Vale Alimentação').fold(0.0, (s, t) => s + (t.isReceita ? t.valor : -t.valor));
+
+  double get _totalReceitasMes => _transacoesDoMes.where((t) => t.isReceita && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
+  double get _totalCartaoMes => _transacoesDoMes.where((t) => !t.isReceita && t.formaPagamento == 'Cartão de Crédito').fold(0.0, (s, t) => s + t.valor);
+  double get _totalDespesasGeralMes => _transacoesDoMes.where((t) => !t.isReceita).fold(0.0, (s, t) => s + t.valor);
 
   void _mudarMes(int incremento) {
     setState(() {
@@ -113,15 +119,13 @@ class _TelaInicialState extends State<TelaInicial> {
         borderRadius: BorderRadius.circular(20),
         splashColor: cor.withOpacity(0.3),
         child: Container(
-          width: 230,
+          width: 230, 
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
+            color: const Color(0xFF1A1A1A), 
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: cor.withOpacity(0.6), width: 1.5), // Borda neon sutil
-            boxShadow: [
-              BoxShadow(color: cor.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 5))
-            ],
+            border: Border.all(color: cor.withOpacity(0.6), width: 1.5), 
+            boxShadow: [BoxShadow(color: cor.withOpacity(0.2), blurRadius: 15, offset: const Offset(0, 5))],
           ),
           child: Row(
             children: [
@@ -131,7 +135,7 @@ class _TelaInicialState extends State<TelaInicial> {
                 child: Icon(icone, color: cor, size: 22),
               ),
               const SizedBox(width: 16),
-              Text(titulo, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: 0.5)),
+              Text(titulo, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
             ],
           ),
         ),
@@ -206,7 +210,7 @@ class _TelaInicialState extends State<TelaInicial> {
                   label: Text(categoria),
                   selected: isSelecionado,
                   selectedColor: Colors.green[50],
-                  labelStyle: TextStyle(color: isSelecionado ? Colors.green[800] : Colors.grey[700], fontWeight: isSelecionado ? FontWeight.bold : FontWeight.normal),
+                  labelStyle: TextStyle(color: isSelecionado ? Colors.green[800] : Colors.grey[700]),
                   checkmarkColor: Colors.green[700],
                   backgroundColor: Colors.white,
                   side: BorderSide(color: isSelecionado ? Colors.green[300]! : Colors.grey[200]!),
@@ -230,6 +234,7 @@ class _TelaInicialState extends State<TelaInicial> {
                     final bool isAgendado = !_isEfetivada(transacao.data);
                     
                     Color corValor = transacao.isReceita ? Colors.green[600]! : Colors.red[600]!;
+                    if (transacao.formaPagamento == 'Vale Alimentação') corValor = Colors.orange[700]!;
                     if (isAgendado) corValor = Colors.orange[700]!;
 
                     return Dismissible(
@@ -261,12 +266,16 @@ class _TelaInicialState extends State<TelaInicial> {
                           leading: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: isAgendado ? Colors.orange[50] : (transacao.isReceita ? Colors.green[50] : Colors.red[50]),
+                              color: transacao.formaPagamento == 'Vale Alimentação' 
+                                  ? Colors.orange[50] 
+                                  : (isAgendado ? Colors.orange[50] : (transacao.isReceita ? Colors.green[50] : Colors.red[50])),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              _getIconeCategoria(transacao.categoria), 
-                              color: isAgendado ? Colors.orange[700] : (transacao.isReceita ? Colors.green[700] : Colors.red[700]),
+                              transacao.formaPagamento == 'Vale Alimentação' ? Icons.fastfood_rounded : _getIconeCategoria(transacao.categoria), 
+                              color: transacao.formaPagamento == 'Vale Alimentação' 
+                                  ? Colors.orange[700] 
+                                  : (isAgendado ? Colors.orange[700] : (transacao.isReceita ? Colors.green[700] : Colors.red[700])),
                               size: 20,
                             ),
                           ),
@@ -278,24 +287,17 @@ class _TelaInicialState extends State<TelaInicial> {
                               spacing: 6.0, 
                               children: [
                                 Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[500], fontSize: 12, fontWeight: FontWeight.w500)),
+                                if (transacao.formaPagamento == 'Vale Alimentação')
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(color: Colors.orange[50], borderRadius: BorderRadius.circular(6)),
+                                    child: Icon(Icons.fastfood, size: 12, color: Colors.orange[700]),
+                                  ),
                                 if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                     decoration: BoxDecoration(color: Colors.blue[50], borderRadius: BorderRadius.circular(6)),
                                     child: Icon(Icons.credit_card_rounded, size: 12, color: Colors.blue[700]),
-                                  ),
-                                if (isAgendado) 
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(color: Colors.orange[50], borderRadius: BorderRadius.circular(6)),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.schedule_rounded, size: 12, color: Colors.orange[700]),
-                                        const SizedBox(width: 2),
-                                        Text('Futuro', style: TextStyle(color: Colors.orange[700], fontSize: 10, fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
                                   ),
                               ],
                             ),
@@ -343,16 +345,9 @@ class _TelaInicialState extends State<TelaInicial> {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF111111), 
-                      Colors.green[900]!,
-                      Colors.green[800]!,
-                    ],
+                    colors: [const Color(0xFF111111), Colors.green[900]!, Colors.green[800]!],
                   ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(32),
-                    bottomRight: Radius.circular(32),
-                  ),
+                  borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
                 ),
                 padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
                 child: Column(
@@ -372,28 +367,21 @@ class _TelaInicialState extends State<TelaInicial> {
                           child: Row(
                             children: [
                               IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 22), onPressed: () => _mudarMes(-1)),
-                              Text(
-                                '${_nomesMeses[_mesAtual.month - 1]}',
-                                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
-                              ),
+                              Text('${_nomesMeses[_mesAtual.month - 1]}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                               IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white, size: 22), onPressed: () => _mudarMes(1)),
                             ],
                           ),
                         )
                       ],
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
 
                     Row(
                       children: [
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
-                            ),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5)),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -401,16 +389,13 @@ class _TelaInicialState extends State<TelaInicial> {
                                   children: [
                                     Icon(Icons.account_balance_wallet_rounded, size: 14, color: Colors.green[200]),
                                     const SizedBox(width: 6),
-                                    const Text('Disponível', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w500)),
+                                    const Text('Disponível', style: TextStyle(fontSize: 12, color: Colors.white70)),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    _formatador.format(_saldoConta), 
-                                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _saldoConta >= 0 ? Colors.white : Colors.red[300]),
-                                  ),
+                                  child: Text(_formatador.format(_saldoConta), style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _saldoConta >= 0 ? Colors.white : Colors.red[300])),
                                 ),
                               ],
                             ),
@@ -420,11 +405,7 @@ class _TelaInicialState extends State<TelaInicial> {
                         Expanded(
                           child: Container(
                             padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.07),
-                              borderRadius: BorderRadius.circular(24),
-                              border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
-                            ),
+                            decoration: BoxDecoration(color: Colors.white.withOpacity(0.07), borderRadius: BorderRadius.circular(24), border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5)),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -432,16 +413,13 @@ class _TelaInicialState extends State<TelaInicial> {
                                   children: [
                                     Icon(Icons.credit_card_rounded, size: 14, color: Colors.blue[200]),
                                     const SizedBox(width: 6),
-                                    const Text('Fatura Aberta', style: TextStyle(fontSize: 12, color: Colors.white70, fontWeight: FontWeight.w500)),
+                                    const Text('Fatura Aberta', style: TextStyle(fontSize: 12, color: Colors.white70)),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 FittedBox(
                                   fit: BoxFit.scaleDown,
-                                  child: Text(
-                                    _formatador.format(_totalCartao), 
-                                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-                                  ),
+                                  child: Text(_formatador.format(_totalCartaoMes), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
                                 ),
                               ],
                             ),
@@ -449,6 +427,41 @@ class _TelaInicialState extends State<TelaInicial> {
                         ),
                       ],
                     ),
+                    
+                    const SizedBox(height: 12),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(colors: [Color(0xFFE65100), Color(0xFFE65100)]),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.orangeAccent.withOpacity(0.3), width: 1.5),
+                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)]
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                                child: const Icon(Icons.fastfood_rounded, color: Colors.white, size: 18),
+                              ),
+                              const SizedBox(width: 14),
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Vale Alimentação', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                  Text('Saldo de Benefício', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                ],
+                              )
+                            ],
+                          ),
+                          Text(_formatador.format(_saldoVale), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    )
                   ],
                 ),
               ),
@@ -462,14 +475,14 @@ class _TelaInicialState extends State<TelaInicial> {
                       children: [
                         Icon(Icons.arrow_circle_up_rounded, color: Colors.green[600], size: 16),
                         const SizedBox(width: 4),
-                        Text('Entradas: ${_formatador.format(_totalReceitas)}', style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text('Entradas: ${_formatador.format(_totalReceitasMes)}', style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     Row(
                       children: [
                         Icon(Icons.arrow_circle_down_rounded, color: Colors.red[400], size: 16),
                         const SizedBox(width: 4),
-                        Text('Previsão Saídas: ${_formatador.format(_totalDespesasGeral)}', style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.bold)),
+                        Text('Previsão Saídas: ${_formatador.format(_totalDespesasGeralMes)}', style: TextStyle(color: Colors.grey[600], fontSize: 11, fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ],
@@ -482,13 +495,7 @@ class _TelaInicialState extends State<TelaInicial> {
                   child: Column(
                     children: [
                       TabBar(
-                        labelColor: Colors.green[800], 
-                        unselectedLabelColor: Colors.grey[500], 
-                        indicatorColor: Colors.green[700],
-                        indicatorWeight: 3,
-                        indicatorSize: TabBarIndicatorSize.label,
-                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                        onTap: (index) => setState(() { _filtroCategoriaAtivo = 'Todas'; }),
+                        labelColor: Colors.green[800], unselectedLabelColor: Colors.grey[500], indicatorColor: Colors.green[700],
                         tabs: const [Tab(text: 'Linha do Tempo'), Tab(text: 'Entradas'), Tab(text: 'Saídas')],
                       ),
                       Expanded(
@@ -513,48 +520,28 @@ class _TelaInicialState extends State<TelaInicial> {
               onTap: () => setState(() { _menuAberto = false; }),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 6.0, sigmaY: 6.0),
-                child: Container(
-                  color: Colors.black.withOpacity(0.3),
-                ),
+                child: Container(color: Colors.black.withOpacity(0.3)),
               ),
             ),
         ],
       ),
 
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      
       floatingActionButton: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (_menuAberto) ...[
-            _buildBotaoMenuPremium(
-              titulo: 'Nova Receita',
-              icone: Icons.arrow_upward_rounded,
-              cor: Colors.greenAccent[400]!,
-              onTap: () => _encaminharParaCadastro(iniciarComoReceita: true),
-            ),
+            _buildBotaoMenuPremium(titulo: 'Nova Receita', icone: Icons.arrow_upward_rounded, cor: Colors.greenAccent[400]!, onTap: () => _encaminharParaCadastro(iniciarComoReceita: true)),
             const SizedBox(height: 12),
-            _buildBotaoMenuPremium(
-              titulo: 'Despesa À Vista',
-              icone: Icons.arrow_downward_rounded,
-              cor: Colors.redAccent[400]!,
-              onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Pix/Dinheiro'),
-            ),
+            _buildBotaoMenuPremium(titulo: 'Despesa À Vista', icone: Icons.arrow_downward_rounded, cor: Colors.redAccent[400]!, onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Pix/Dinheiro')),
             const SizedBox(height: 12),
-            _buildBotaoMenuPremium(
-              titulo: 'Gasto no Cartão',
-              icone: Icons.credit_card_rounded,
-              cor: Colors.blueAccent[400]!,
-              onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Cartão de Crédito'),
-            ),
+            _buildBotaoMenuPremium(titulo: 'Gasto no Cartão', icone: Icons.credit_card_rounded, cor: Colors.blueAccent[400]!, onTap: () => _encaminharParaCadastro(iniciarComoReceita: false, formaPagamento: 'Cartão de Crédito')),
             const SizedBox(height: 24),
           ],
-
           FloatingActionButton(
             heroTag: 'btn_principal',
             onPressed: () => setState(() => _menuAberto = !_menuAberto),
             backgroundColor: _menuAberto ? Colors.red[600] : const Color(0xFF111111),
-            elevation: _menuAberto ? 0 : 8,
             child: AnimatedRotation(
               turns: _menuAberto ? 0.125 : 0, 
               duration: const Duration(milliseconds: 250),
