@@ -1,9 +1,11 @@
 import 'tela_metas.dart';
+import 'tela_relatorios.dart';
 import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'tela_cadastro.dart';
 import '../modelos/transacao.dart';
 
@@ -157,45 +159,125 @@ class _TelaInicialState extends State<TelaInicial> {
     Map<String, double> agrupado = {};
     for (var t in despesas) { agrupado[t.categoria] = (agrupado[t.categoria] ?? 0.0) + t.valor; }
 
+    final List<Color> cores = [
+      Colors.indigo[400]!, Colors.pink[400]!, Colors.teal[400]!,
+      Colors.orange[400]!, Colors.purple[400]!, Colors.green[400]!,
+      Colors.red[400]!, Colors.blue[400]!, Colors.amber[400]!,
+    ];
+
+    int corIndex = 0;
+    List<PieChartSectionData> secoes = [];
+    List<Widget> legendas = [];
+
+    final listaOrdenada = agrupado.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+
+    for (var entry in listaOrdenada) {
+      final percentual = entry.value / totalGasto;
+      final cor = cores[corIndex % cores.length];
+
+      secoes.add(
+        PieChartSectionData(
+          color: cor,
+          value: entry.value,
+          title: '${(percentual * 100).toStringAsFixed(0)}%',
+          radius: 35, 
+          titleStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+        )
+      );
+
+      legendas.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 8.0),
+          child: Row(
+            children: [
+              Container(width: 10, height: 10, decoration: BoxDecoration(color: cor, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  entry.key, 
+                  style: TextStyle(fontSize: 12, color: Colors.grey[700], fontWeight: FontWeight.w600),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        )
+      );
+      corIndex++;
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
       elevation: 0,
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: Colors.grey[200]!)),
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.pie_chart_outline_rounded, color: Colors.green[800], size: 20),
-                const SizedBox(width: 8),
-                Text('Divisão de Gastos do Mês', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey[800])),
-              ],
-            ),
-            const SizedBox(height: 20),
-            ...agrupado.entries.map((entry) {
-              final percentual = entry.value / totalGasto;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 14.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => TelaRelatorios(transacoes: transacoesDoMes, mesReferencia: _mesAtual)));
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.donut_large_rounded, color: Colors.indigo[400], size: 20),
+                      const SizedBox(width: 8),
+                      Text('Análise de Despesas', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey[800])),
+                    ],
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: Colors.grey[400]),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  SizedBox(
+                    height: 150,
+                    width: 150,
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        Text(entry.key, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                        Text('${(percentual * 100).toStringAsFixed(1)}% (${_formatador.format(entry.value)})', style: TextStyle(fontSize: 13, color: Colors.grey[600], fontWeight: FontWeight.bold)),
+                        PieChart(
+                          PieChartData(
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 45, 
+                            sections: secoes,
+                            borderData: FlBorderData(show: false),
+                          ),
+                          swapAnimationDuration: const Duration(milliseconds: 800), 
+                          swapAnimationCurve: Curves.easeOutQuint,
+                        ),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('Total', style: TextStyle(fontSize: 11, color: Colors.grey[500], fontWeight: FontWeight.w600)),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(_formatador.format(totalGasto), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        )
                       ],
                     ),
-                    const SizedBox(height: 6),
-                    LinearProgressIndicator(value: percentual, backgroundColor: Colors.grey[100], color: Colors.green[700], minHeight: 8, borderRadius: BorderRadius.circular(4)),
-                  ],
-                ),
-              );
-            }),
-          ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: legendas,
+                    ),
+                  )
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
