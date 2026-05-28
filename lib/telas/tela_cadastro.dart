@@ -27,23 +27,36 @@ class _TelaCadastroState extends State<TelaCadastro> {
   bool _isReceita = false; 
   DateTime _dataSelecionada = DateTime.now();
   
-  final List<String> _categoriasDespesa = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Cuidados Pessoais', 'Outros'];
-  final List<String> _categoriasReceita = ['Salário', 'Investimentos', 'Freelance', 'Outros'];
+  final List<String> _categoriasDespesa = [
+    'Alimentação', 'Restaurante', 'Lanche', 'Padaria', 'Supermercado',
+    'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Jogos', 
+    'Compras Online', 'Assinaturas', 'Educação', 'Cuidados Pessoais', 'Outros'
+  ];
+  final List<String> _categoriasReceita = ['Salário', 'Investimentos', 'Freelance', 'Crédito Vale', 'Outros'];
   String _categoriaSelecionada = 'Outros';
 
   String _tipoRepeticao = 'Única'; 
   String _formaPagamento = 'Pix/Dinheiro'; 
 
   final Map<String, IconData> _iconesCategoria = {
-    'Alimentação': Icons.restaurant,
-    'Transporte': Icons.directions_car,
-    'Moradia': Icons.home,
-    'Saúde': Icons.medical_services,
-    'Lazer': Icons.sports_esports,
-    'Cuidados Pessoais': Icons.content_cut,
-    'Salário': Icons.work,
-    'Investimentos': Icons.monetization_on,
-    'Freelance': Icons.laptop_mac,
+    'Alimentação': Icons.restaurant_menu_rounded,
+    'Restaurante': Icons.restaurant_rounded,
+    'Lanche': Icons.fastfood_rounded,
+    'Padaria': Icons.cake_rounded,
+    'Supermercado': Icons.local_grocery_store_rounded,
+    'Transporte': Icons.directions_car_rounded,
+    'Moradia': Icons.home_rounded,
+    'Saúde': Icons.medical_services_rounded,
+    'Lazer': Icons.theater_comedy_rounded,
+    'Jogos': Icons.sports_esports_rounded,
+    'Compras Online': Icons.shopping_bag_rounded,
+    'Assinaturas': Icons.subscriptions_rounded,
+    'Educação': Icons.school_rounded,
+    'Cuidados Pessoais': Icons.content_cut_rounded,
+    'Salário': Icons.work_rounded,
+    'Investimentos': Icons.monetization_on_rounded,
+    'Freelance': Icons.laptop_mac_rounded,
+    'Crédito Vale': Icons.fastfood_rounded,
     'Outros': Icons.category_rounded,
   };
 
@@ -83,7 +96,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
     List<Color> gradienteCartao = [Colors.red[400]!, Colors.red[700]!];
     if (_isReceita && !isVale) gradienteCartao = [Colors.green[500]!, Colors.green[800]!];
     if (isCredito) gradienteCartao = [Colors.blue[800]!, Colors.blue[900]!, Colors.black87];
-    if (isVale) gradienteCartao = [const Color(0xFFE65100), const Color(0xFFFF8F00)]; // Estilo Ticket/Alelo Premium
+    if (isVale) gradienteCartao = [const Color(0xFFE65100), const Color(0xFFFF8F00)]; 
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -146,7 +159,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(isVale ? 'VALE ALIMENTAÇÃO' : 'ALLAN', style: const TextStyle(fontSize: 14, color: Colors.white54, letterSpacing: 2, fontWeight: FontWeight.w600)),
+              Text(isVale ? 'ALLAN' : 'ALLAN', style: const TextStyle(fontSize: 14, color: Colors.white54, letterSpacing: 2, fontWeight: FontWeight.w600)),
               Text(DateFormat('dd/MM').format(_dataSelecionada), style: const TextStyle(fontSize: 14, color: Colors.white54, fontWeight: FontWeight.bold)),
             ],
           )
