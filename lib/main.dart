@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'telas/tela_inicial.dart';
+import 'telas/tela_bloqueio.dart';
 
 void main() {
   runApp(const MeuApp());
@@ -28,7 +28,7 @@ class MeuApp extends StatelessWidget {
         Locale('pt', 'BR'),
       ],
       
-      home: const TelaInicial(),
+      home: const TelaBloqueio(),
     );
   }
 }
