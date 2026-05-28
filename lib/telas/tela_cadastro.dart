@@ -23,7 +23,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
   final List<String> _categoriasReceita = ['Salário', 'Investimentos', 'Freelance', 'Outros'];
   String _categoriaSelecionada = 'Outros';
 
-  String _tipoRepeticao = 'Única';
+  String _tipoRepeticao = 'Única'; 
+  String _formaPagamento = 'Pix/Dinheiro';
 
   @override
   void initState() {
@@ -34,6 +35,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
       _isReceita = widget.transacaoParaEdicao!.isReceita;
       _categoriaSelecionada = widget.transacaoParaEdicao!.categoria;
       _dataSelecionada = widget.transacaoParaEdicao!.data;
+      _formaPagamento = widget.transacaoParaEdicao!.formaPagamento;
     }
   }
 
@@ -101,7 +103,12 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 const Text('Despesa', style: TextStyle(fontSize: 16)),
                 Switch(
                   value: _isReceita,
-                  onChanged: (valor) { setState(() { _isReceita = valor; }); },
+                  onChanged: (valor) { 
+                    setState(() { 
+                      _isReceita = valor; 
+                      if (_isReceita) _formaPagamento = 'Pix/Dinheiro'; 
+                    }); 
+                  },
                   activeColor: Colors.green,
                   inactiveThumbColor: Colors.red,
                 ),
@@ -118,15 +125,32 @@ class _TelaCadastroState extends State<TelaCadastro> {
             ),
             const SizedBox(height: 16),
 
+            if (!_isReceita) ...[
+              const Divider(),
+              const Text('Forma de Pagamento', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)),
+              const SizedBox(height: 8),
+              SegmentedButton<String>(
+                segments: const [
+                  ButtonSegment(value: 'Pix/Dinheiro', label: Text('À Vista', style: TextStyle(fontSize: 12)), icon: Icon(Icons.pix, size: 16)),
+                  ButtonSegment(value: 'Cartão de Crédito', label: Text('Crédito', style: TextStyle(fontSize: 12)), icon: Icon(Icons.credit_card, size: 16)),
+                ],
+                selected: {_formaPagamento},
+                onSelectionChanged: (Set<String> selecao) {
+                  setState(() { _formaPagamento = selecao.first; });
+                },
+              ),
+              const SizedBox(height: 16),
+            ],
+
             if (!isEditando) ...[
               const Divider(),
               const Text('Repetição', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.grey)),
               const SizedBox(height: 8),
               SegmentedButton<String>(
                 segments: const [
-                  ButtonSegment(value: 'Única', label: Text('Única')),
-                  ButtonSegment(value: 'Fixa', label: Text('Fixa')),
-                  ButtonSegment(value: 'Parcelada', label: Text('Parcelada')),
+                  ButtonSegment(value: 'Única', label: Text('Única', style: TextStyle(fontSize: 12))),
+                  ButtonSegment(value: 'Fixa', label: Text('Fixa', style: TextStyle(fontSize: 12))),
+                  ButtonSegment(value: 'Parcelada', label: Text('Parcelada', style: TextStyle(fontSize: 12))),
                 ],
                 selected: {_tipoRepeticao},
                 onSelectionChanged: (Set<String> selecao) {
@@ -144,7 +168,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                     border: const OutlineInputBorder()
                   ),
                 ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 32),
             ],
 
             SizedBox(
@@ -179,6 +203,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                       isReceita: _isReceita,
                       categoria: _categoriaSelecionada,
                       data: dataFutura, 
+                      formaPagamento: _formaPagamento,
                     ));
                   }
 

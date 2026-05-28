@@ -18,7 +18,6 @@ class _TelaInicialState extends State<TelaInicial> {
   String _filtroCategoriaAtivo = 'Todas';
   
   DateTime _mesAtual = DateTime.now();
-
   final List<String> _nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
   @override
@@ -50,14 +49,33 @@ class _TelaInicialState extends State<TelaInicial> {
     }).toList();
   }
 
-  double get _totalReceitas => _transacoesDoMes.where((t) => t.isReceita).fold(0.0, (s, t) => s + t.valor);
-  double get _totalDespesas => _transacoesDoMes.where((t) => !t.isReceita).fold(0.0, (s, t) => s + t.valor);
-  double get _saldoTotal => _totalReceitas - _totalDespesas;
+  bool _isEfetivada(DateTime dataTransacao) {
+    final hoje = DateTime.now();
+    final dataT = DateTime(dataTransacao.year, dataTransacao.month, dataTransacao.day);
+    final dataH = DateTime(hoje.year, hoje.month, hoje.day);
+    return !dataT.isAfter(dataH);
+  }
+
+  double get _totalReceitas => _transacoesDoMes
+      .where((t) => t.isReceita && _isEfetivada(t.data))
+      .fold(0.0, (s, t) => s + t.valor);
+  
+  double get _totalDespesasAVista => _transacoesDoMes
+      .where((t) => !t.isReceita && t.formaPagamento != 'Cartão de Crédito' && _isEfetivada(t.data))
+      .fold(0.0, (s, t) => s + t.valor);
+  
+  double get _totalCartao => _transacoesDoMes
+      .where((t) => !t.isReceita && t.formaPagamento == 'Cartão de Crédito')
+      .fold(0.0, (s, t) => s + t.valor);
+  
+  double get _saldoConta => _totalReceitas - _totalDespesasAVista;
+  
+  double get _totalDespesasGeral => _transacoesDoMes.where((t) => !t.isReceita).fold(0.0, (s, t) => s + t.valor);
 
   void _mudarMes(int incremento) {
     setState(() {
       _mesAtual = DateTime(_mesAtual.year, _mesAtual.month + incremento, 1);
-      _filtroCategoriaAtivo = 'Todas';
+      _filtroCategoriaAtivo = 'Todas'; 
     });
   }
 
@@ -126,7 +144,6 @@ class _TelaInicialState extends State<TelaInicial> {
         : transacoesDaAba.where((t) => t.categoria == _filtroCategoriaAtivo).toList();
 
     listaFinal.sort((a, b) => b.data.compareTo(a.data));
-    
     final bool temGrafico = mostrarGrafico && transacoesDaAba.isNotEmpty;
 
     return Column(
@@ -159,12 +176,14 @@ class _TelaInicialState extends State<TelaInicial> {
                   itemCount: listaFinal.length + (temGrafico ? 1 : 0),
                   itemBuilder: (context, index) {
                     
-
-                    if (temGrafico && index == 0) {
-                      return _buildGraficoResumo(transacoesDaAba);
-                    }
+                    if (temGrafico && index == 0) return _buildGraficoResumo(transacoesDaAba);
 
                     final transacao = listaFinal[temGrafico ? index - 1 : index];
+                    
+                    final bool isAgendado = !_isEfetivada(transacao.data);
+                    
+                    Color corValor = transacao.isReceita ? Colors.green : Colors.red;
+                    if (isAgendado) corValor = Colors.orange;
 
                     return Dismissible(
                       key: Key(transacao.id),
@@ -188,14 +207,33 @@ class _TelaInicialState extends State<TelaInicial> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: ListTile(
                           leading: CircleAvatar(
-                            backgroundColor: transacao.isReceita ? Colors.green[100] : Colors.red[100],
-                            child: Icon(_getIconeCategoria(transacao.categoria), color: transacao.isReceita ? Colors.green : Colors.red),
+                            backgroundColor: isAgendado ? Colors.orange[50] : (transacao.isReceita ? Colors.green[100] : Colors.red[100]),
+                            child: Icon(_getIconeCategoria(transacao.categoria), color: isAgendado ? Colors.orange : (transacao.isReceita ? Colors.green : Colors.red)),
                           ),
                           title: Text(transacao.titulo, style: const TextStyle(fontWeight: FontWeight.w500)),
-                          subtitle: Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                          subtitle: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 6.0,
+                            children: [
+                              Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                              
+                              if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
+                                const Icon(Icons.credit_card, size: 14, color: Colors.blue),
+                              
+                              if (isAgendado) 
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.schedule, size: 14, color: Colors.orange),
+                                    const SizedBox(width: 2),
+                                    const Text('Agendado', style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                            ],
+                          ),
                           trailing: Text(
                             '${transacao.isReceita ? '+' : '-'} ${_formatador.format(transacao.valor)}',
-                            style: TextStyle(color: transacao.isReceita ? Colors.green : Colors.red, fontWeight: FontWeight.bold, fontSize: 16),
+                            style: TextStyle(color: corValor, fontWeight: FontWeight.bold, fontSize: 16),
                           ),
                           onTap: () async {
                             final transacaoEditada = await Navigator.push(
@@ -236,14 +274,14 @@ class _TelaInicialState extends State<TelaInicial> {
       body: Column(
         children: [
           Container(
-            color: Colors.green[700],
+            color: Colors.green[700], 
             padding: const EdgeInsets.only(bottom: 16.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 30), onPressed: () => _mudarMes(-1)),
                 SizedBox(
-                  width: 150,
+                  width: 150, 
                   child: Text(
                     '${_nomesMeses[_mesAtual.month - 1]} ${_mesAtual.year}',
                     textAlign: TextAlign.center,
@@ -256,50 +294,82 @@ class _TelaInicialState extends State<TelaInicial> {
           ),
 
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Saldo em Conta', style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 8),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _formatador.format(_saldoConta), 
+                              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _saldoConta >= 0 ? Colors.black87 : Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                
+                Expanded(
+                  child: Card(
+                    color: Colors.blue[600],
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Fatura Aberta', style: TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500)),
+                          const SizedBox(height: 8),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              _formatador.format(_totalCartao), 
+                              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    const Text('Saldo do Mês', style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    Text(
-                      _formatador.format(_saldoTotal), 
-                      style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: _saldoTotal >= 0 ? Colors.black87 : Colors.red)
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.green[50], borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.arrow_upward, color: Colors.green, size: 20)),
-                            const SizedBox(width: 12),
-                            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              const Text('Receitas', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                              Text(_formatador.format(_totalReceitas), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                            ]),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.arrow_downward, color: Colors.red, size: 20)),
-                            const SizedBox(width: 12),
-                            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              const Text('Despesas', style: TextStyle(color: Colors.grey, fontSize: 14)),
-                              Text(_formatador.format(_totalDespesas), style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                            ]),
-                          ],
-                        ),
-                      ],
-                    ),
+                    const Icon(Icons.arrow_upward, color: Colors.green, size: 16),
+                    const SizedBox(width: 4),
+                    Text('Entradas: ${_formatador.format(_totalReceitas)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
-              ),
+                Row(
+                  children: [
+                    const Icon(Icons.arrow_downward, color: Colors.red, size: 16),
+                    const SizedBox(width: 4),
+                    Text('Saídas Previstas: ${_formatador.format(_totalDespesasGeral)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  ],
+                ),
+              ],
             ),
           ),
           
@@ -331,17 +401,13 @@ class _TelaInicialState extends State<TelaInicial> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          final resultado = await Navigator.push(
+          final transacaoRecebida = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const TelaCadastro()),
           );
-          if (resultado != null) {
+          if (transacaoRecebida != null) {
             setState(() {
-              if (resultado is List<Transacao>) {
-                _transacoesGlobais.addAll(resultado);
-              } else if (resultado is Transacao) {
-                _transacoesGlobais.add(resultado);
-              }
+              _transacoesGlobais.addAll(transacaoRecebida is List ? transacaoRecebida as Iterable<Transacao> : [transacaoRecebida as Transacao]);
               _salvarDados();
             });
           }

@@ -5,6 +5,7 @@ class Transacao {
   final bool isReceita;
   final String categoria;
   final DateTime data;
+  final String formaPagamento;
 
   Transacao({
     required this.id,
@@ -13,6 +14,7 @@ class Transacao {
     required this.isReceita,
     required this.categoria,
     required this.data,
+    required this.formaPagamento,
   });
 
   Map<String, dynamic> toJson() {
@@ -23,6 +25,7 @@ class Transacao {
       'isReceita': isReceita,
       'categoria': categoria,
       'data': data.toIso8601String(),
+      'formaPagamento': formaPagamento,
     };
   }
 
@@ -34,6 +37,7 @@ class Transacao {
       isReceita: json['isReceita'],
       categoria: json['categoria'] ?? 'Outros',
       data: json['data'] != null ? DateTime.parse(json['data']) : DateTime.now(),
+      formaPagamento: json['formaPagamento'] ?? 'Pix/Dinheiro', 
     );
   }
 }
