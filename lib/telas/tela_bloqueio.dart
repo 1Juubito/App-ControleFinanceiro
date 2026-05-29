@@ -21,7 +21,7 @@ class _TelaBloqueioState extends State<TelaBloqueio> {
     _autenticar(); 
   }
 
-  Future<void> _autenticar() async {
+Future<void> _autenticar() async {
     setState(() {
       _isAutenticando = true;
     });
@@ -29,9 +29,12 @@ class _TelaBloqueioState extends State<TelaBloqueio> {
     try {
       final bool autenticado = await _auth.authenticate(
         localizedReason: 'Posicione o dedo no sensor para liberar o acesso',
+        biometricOnly: true, 
+        persistAcrossBackgrounding: true,
         authMessages: const [
           AndroidAuthMessages(
-            signInTitle: 'Cofre Financeiro',
+            signInTitle: 'Acesso Restrito',
+            signInHint: 'Verifique sua identidade',
             cancelButton: 'Cancelar',
           ),
         ],
