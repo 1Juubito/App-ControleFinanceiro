@@ -91,7 +91,9 @@ class _TelaInicialState extends State<TelaInicial> {
     return receitasGlobais - despesasGlobais;
   }
   
-  double get _saldoVale => _transacoesGlobais.where((t) => t.formaPagamento == 'Vale Alimentação').fold(0.0, (s, t) => s + (t.isReceita ? t.valor : -t.valor));
+  double get _saldoVale => _transacoesGlobais
+      .where((t) => t.formaPagamento == 'Vale Alimentação' && _isEfetivada(t.data))
+      .fold(0.0, (s, t) => s + (t.isReceita ? t.valor : -t.valor));
 
   double get _totalReceitasMes => _transacoesDoMes.where((t) => t.isReceita && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
   double get _totalCartaoMes => _transacoesDoMes.where((t) => !t.isReceita && t.formaPagamento == 'Cartão de Crédito').fold(0.0, (s, t) => s + t.valor);
