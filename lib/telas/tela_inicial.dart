@@ -8,6 +8,7 @@ import 'tela_cadastro.dart';
 import 'tela_metas.dart';
 import 'tela_relatorios.dart';
 import '../modelos/transacao.dart';
+import '../servicos/notificacao_service.dart';
 
 class TelaInicial extends StatefulWidget {
   const TelaInicial({super.key});
@@ -52,6 +53,7 @@ class _TelaInicialState extends State<TelaInicial> {
   void initState() {
     super.initState();
     _carregarDados();
+    NotificacaoService().inicializar();
   }
 
   void _carregarDados() {
