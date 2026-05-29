@@ -119,11 +119,19 @@ class _TelaInicialState extends State<TelaInicial> {
       ),
     );
 
-    if (transacaoRecebida != null) {
+if (transacaoRecebida != null) {
+      final novasTransacoes = transacaoRecebida is List 
+          ? transacaoRecebida as Iterable<Transacao> 
+          : [transacaoRecebida as Transacao];
+
       setState(() {
-        _transacoesGlobais.addAll(transacaoRecebida is List ? transacaoRecebida as Iterable<Transacao> : [transacaoRecebida as Transacao]);
+        _transacoesGlobais.addAll(novasTransacoes);
         _salvarDados();
       });
+
+      for (var transacao in novasTransacoes) {
+        NotificacaoService().agendarNotificacao(transacao);
+      }
     }
   }
 
