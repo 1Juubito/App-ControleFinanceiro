@@ -287,10 +287,36 @@ class _TelaCadastroState extends State<TelaCadastro> {
                           subtitle: Text(DateFormat('dd/MM/yyyy').format(_dataSelecionada), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () async {
-                            final dataEscolhida = await showDatePicker(context: context, initialDate: _dataSelecionada, firstDate: DateTime(2020), lastDate: DateTime(2030));
-                            if (dataEscolhida != null) setState(() { _dataSelecionada = dataEscolhida; });
-                          },
-                        ),
+                            final DateTime? dataEscolhida = await showModalBottomSheet<DateTime>(
+                              context: context,
+                              builder: (context) {
+                                return Container(
+                                  height: 350,
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    children: [
+                                      const Text("Selecione a data", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                      Expanded(
+                                        child: CalendarDatePicker(
+                                        initialDate: _dataSelecionada,
+                                        firstDate: DateTime(2020),
+                                        lastDate: DateTime(2030),
+                                        onDateChanged: (data) => Navigator.pop(context, data),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+
+                          if (dataEscolhida != null) {
+                            setState(() {
+                              _dataSelecionada = dataEscolhida;
+                            });
+                          }
+                        },
+                      ),
                         
                         if (!isEditando) ...[
                           const Divider(height: 32),
