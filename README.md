@@ -1,8 +1,8 @@
-# 📊 Controle Financeiro 
+# 📊 Controle Financeiro (Error404Saldo)
 
 ⚠️ **Status do Projeto: Em Desenvolvimento** 🛠️
 
-Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em entregar uma experiência de usuário (UX) de alto nível. Inspirado nas maiores fintechs do mercado, o projeto abandona formulários monótonos para adotar interações dinâmicas, *Glassmorphism* e *Dark Mode* premium.
+Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em entregar uma experiência de usuário (UX) de alto nível e arquitetura resiliente. Inspirado nas maiores fintechs do mercado, o projeto abandona formulários monótonos para adotar interações dinâmicas, *Glassmorphism*, *Dark Mode* premium e **sincronização de dados em nuvem**.
 
 ## 🚀 Funcionalidades Concluídas (Ciclo CRUD)
 
@@ -26,6 +26,7 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
 
 *   **[Flutter](https://flutter.dev/):** Framework principal para desenvolvimento multiplataforma.
 *   **[Dart](https://dart.dev/):** Linguagem base da aplicação.
+*   **Firebase Core & Cloud Firestore:** Backend as a Service (BaaS) utilizado para o banco de dados NoSQL em nuvem, garantindo sincronização em tempo real e backup dos dados.
 *   **hive / hive_flutter:** Banco de dados NoSQL nativo, ultrarrápido, com proteção contra quebra de *schema* (*Null Safety Fallback*).
 *   **fl_chart:** Motor gráfico avançado para renderização de gráficos animados e interativos.
 *   **extended_masked_text:** Para formatação inteligente de entradas de valores monetários.
@@ -43,8 +44,9 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
 ## 🚀 Funcionalidades
 
 - [x] Autenticação segura na tela de bloqueio.
+- [x] Sincronização em nuvem e redundância de dados (Firestore + Hive).
 - [x] Resumo financeiro inteligente (Saldo Disponível, Fatura Aberta e Vale Alimentação).
-- [x] Banco de dados local NoSQL.
+- [x] Banco de dados local NoSQL para leitura offline rápida.
 - [x] Cadastro rápido de Receitas, Despesas à Vista e Gastos no Cartão.
 - [x] Filtro dinâmico de transações por categorias na tela inicial.
 - [x] Identificação visual inteligente de lançamentos agendados.
@@ -54,7 +56,10 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
 
 ## 💻 Como Rodar o Projeto
 
+⚠️ **Aviso de Infraestrutura:** Este projeto utiliza o Firebase como backend. Para rodar o projeto na sua máquina, você precisará conectar o seu próprio projeto do Firebase gerando o arquivo firebase_options.dart via FlutterFire CLI.
+
 1. Certifique-se de ter o ecossistema flutter configurado nna sua máquina.
+
 2. Clone este repositório:
   ```bash
   git clone [https://github.com/SEU_UTILIZADOR/controle_financeiro.git](https://github.com/SEU_UTILIZADOR/controle_financeiro.git)
