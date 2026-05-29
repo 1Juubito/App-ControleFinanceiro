@@ -287,35 +287,62 @@ class _TelaCadastroState extends State<TelaCadastro> {
                           subtitle: Text(DateFormat('dd/MM/yyyy').format(_dataSelecionada), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () async {
-                            final DateTime? dataEscolhida = await showModalBottomSheet<DateTime>(
+                            final DateTime? dataEscolhida = await showDialog<DateTime>(
                               context: context,
                               builder: (context) {
-                                return Container(
-                                  height: 350,
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    children: [
-                                      const Text("Selecione a data", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                      Expanded(
-                                        child: CalendarDatePicker(
-                                        initialDate: _dataSelecionada,
-                                        firstDate: DateTime(2020),
-                                        lastDate: DateTime(2030),
-                                        onDateChanged: (data) => Navigator.pop(context, data),
-                                      ),
+                                return Dialog(
+                                  backgroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24), 
+                                  ),
+                                  child: Container(
+                                    width: 320,
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          "Selecione a data", 
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold, 
+                                            fontSize: 18, 
+                                            color: Colors.blue[800],
+                                            letterSpacing: 1.2,
+                                          )
+                                        ),
+                                        const SizedBox(height: 12),
+                                        SizedBox(
+                                          height: 300, 
+                                          child: Theme(
+                                            data: ThemeData.light().copyWith(
+                                              colorScheme: ColorScheme.light(
+                                                primary: Colors.blue[700]!,
+                                                onPrimary: Colors.white,
+                                                surface: Colors.white,
+                                                onSurface: Colors.black87,
+                                              ),
+                                            ),
+                                            child: CalendarDatePicker(
+                                              initialDate: _dataSelecionada,
+                                              firstDate: DateTime(2020),
+                                              lastDate: DateTime(2030),
+                                              onDateChanged: (data) => Navigator.pop(context, data),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
+                                  ),
+                                );
+                              },
+                            );
 
-                          if (dataEscolhida != null) {
-                            setState(() {
-                              _dataSelecionada = dataEscolhida;
-                            });
-                          }
-                        },
+                            if (dataEscolhida != null) {
+                              setState(() {
+                                _dataSelecionada = dataEscolhida;
+                              });
+                            }
+                          },
                       ),
                         
                         if (!isEditando) ...[
