@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:extended_masked_text/extended_masked_text.dart';
 import 'package:intl/intl.dart';
 import '../modelos/transacao.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TelaCadastro extends StatefulWidget {
   final Transacao? transacaoParaEdicao;
@@ -400,8 +401,10 @@ class _TelaCadastroState extends State<TelaCadastro> {
                 String tituloFinal = textoDescricao;
                 if (_tipoRepeticao == 'Parcelada') tituloFinal = '$textoDescricao (${i + 1}/$quantidade)';
 
+                String idGerado = isEditando ? widget.transacaoParaEdicao!.id : DateTime.now().add(Duration(milliseconds: i)).toString();
+
                 transacoesGeradas.add(Transacao(
-                  id: isEditando ? widget.transacaoParaEdicao!.id : DateTime.now().add(Duration(milliseconds: i)).toString(),
+                  id: idGerado,
                   titulo: tituloFinal,
                   valor: valorConvertido,
                   isReceita: _isReceita,
@@ -409,6 +412,16 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   data: dataFutura, 
                   formaPagamento: _formaPagamento, 
                 ));
+
+                FirebaseFirestore.instance.collection('transacoes').doc(idGerado).set({
+                  'id': idGerado,
+                  'titulo': tituloFinal,
+                  'valor': valorConvertido,
+                  'isReceita': _isReceita,
+                  'categoria': _categoriaSelecionada,
+                  'data': dataFutura.toIso8601String(),
+                  'formaPagamento': _formaPagamento,
+                });
               }
               Navigator.pop(context, isEditando ? transacoesGeradas.first : transacoesGeradas);
             },

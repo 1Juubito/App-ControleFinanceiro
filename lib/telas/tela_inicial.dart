@@ -9,6 +9,7 @@ import 'tela_metas.dart';
 import 'tela_relatorios.dart';
 import '../modelos/transacao.dart';
 import '../servicos/notificacao_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TelaInicial extends StatefulWidget {
   const TelaInicial({super.key});
@@ -56,9 +57,10 @@ class _TelaInicialState extends State<TelaInicial> {
     NotificacaoService().inicializar();
   }
 
-  void _carregarDados() {
+  void _carregarDados() async {
     final box = Hive.box('cofre_financeiro');
     final dados = box.get('transacoes_salvas');
+    
     if (dados != null) {
       setState(() {
         _transacoesGlobais = (dados as List).map((item) {
@@ -66,6 +68,35 @@ class _TelaInicialState extends State<TelaInicial> {
           return Transacao.fromJson(mapaConvertido);
         }).toList();
       });
+    } else {
+      debugPrint("Hive vazio ou corrompido. Buscando backup no Firebase...");
+      
+      try {
+        final snapshot = await FirebaseFirestore.instance.collection('transacoes').get();
+        
+        if (snapshot.docs.isNotEmpty) {
+          List<Transacao> transacoesRecuperadas = [];
+          
+          for (var doc in snapshot.docs) {
+            final dadosNuvem = doc.data();
+            
+            if (dadosNuvem['data'] is String) {
+              dadosNuvem['data'] = DateTime.parse(dadosNuvem['data']);
+            }
+            
+            transacoesRecuperadas.add(Transacao.fromJson(dadosNuvem));
+          }
+          
+          setState(() {
+            _transacoesGlobais = transacoesRecuperadas;
+          });
+          
+          _salvarDados(); 
+          debugPrint("Backup do Firebase restaurado com sucesso no Hive!");
+        }
+      } catch (e) {
+        debugPrint("Erro crítico ao buscar dados no Firebase: $e");
+      }
     }
   }
 
@@ -398,6 +429,8 @@ if (transacaoRecebida != null) {
                         children: [
                           SlidableAction(
                             onPressed: (context) {
+                              FirebaseFirestore.instance.collection('transacoes').doc(transacao.id).delete();
+
                               setState(() {
                                 _transacoesGlobais.removeWhere((t) => t.id == transacao.id);
                                 _salvarDados();
