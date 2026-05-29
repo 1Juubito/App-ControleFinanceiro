@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'tela_cadastro.dart';
 import 'tela_metas.dart';
 import 'tela_relatorios.dart';
@@ -78,24 +79,24 @@ class _TelaInicialState extends State<TelaInicial> {
     }).toList();
   }
 
-  bool _isEfetivada(DateTime dataTransacao) {
+  bool _isEfetivada(Transacao t) {
+    if (t.statusPago) return true;
+    
     final hoje = DateTime.now();
-    final dataT = DateTime(dataTransacao.year, dataTransacao.month, dataTransacao.day);
+    final dataT = DateTime(t.data.year, t.data.month, t.data.day);
     final dataH = DateTime(hoje.year, hoje.month, hoje.day);
     return !dataT.isAfter(dataH);
   }
 
   double get _saldoConta {
-    final receitasGlobais = _transacoesGlobais.where((t) => t.isReceita && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
-    final despesasGlobais = _transacoesGlobais.where((t) => !t.isReceita && t.formaPagamento != 'Cartão de Crédito' && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
+    final receitasGlobais = _transacoesGlobais.where((t) => t.isReceita && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t)).fold(0.0, (s, t) => s + t.valor);
+    final despesasGlobais = _transacoesGlobais.where((t) => !t.isReceita && t.formaPagamento != 'Cartão de Crédito' && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t)).fold(0.0, (s, t) => s + t.valor);
     return receitasGlobais - despesasGlobais;
   }
   
-  double get _saldoVale => _transacoesGlobais
-      .where((t) => t.formaPagamento == 'Vale Alimentação' && _isEfetivada(t.data))
-      .fold(0.0, (s, t) => s + (t.isReceita ? t.valor : -t.valor));
+  double get _saldoVale => _transacoesGlobais.where((t) => t.formaPagamento == 'Vale Alimentação' && _isEfetivada(t)).fold(0.0, (s, t) => s + (t.isReceita ? t.valor : -t.valor));
 
-  double get _totalReceitasMes => _transacoesDoMes.where((t) => t.isReceita && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t.data)).fold(0.0, (s, t) => s + t.valor);
+  double get _totalReceitasMes => _transacoesDoMes.where((t) => t.isReceita && t.formaPagamento != 'Vale Alimentação' && _isEfetivada(t)).fold(0.0, (s, t) => s + t.valor);
   double get _totalCartaoMes => _transacoesDoMes.where((t) => !t.isReceita && t.formaPagamento == 'Cartão de Crédito').fold(0.0, (s, t) => s + t.valor);
   double get _totalDespesasGeralMes => _transacoesDoMes.where((t) => !t.isReceita).fold(0.0, (s, t) => s + t.valor);
 
@@ -370,97 +371,188 @@ class _TelaInicialState extends State<TelaInicial> {
                 itemCount: listaFiltrada.length,
                 itemBuilder: (context, index) {
                   final transacao = listaFiltrada[index];
-                  final bool isAgendado = !_isEfetivada(transacao.data);
+                  final bool isAgendado = !_isEfetivada(transacao);
                   
                   Color corValor = transacao.isReceita ? Colors.green[600]! : Colors.red[600]!;
                   if (transacao.formaPagamento == 'Vale Alimentação') corValor = Colors.orange[700]!;
                   if (isAgendado) corValor = Colors.orange[700]!;
 
-                  return Dismissible(
-                    key: Key(transacao.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 24),
-                      decoration: BoxDecoration(color: Colors.red[100], borderRadius: BorderRadius.circular(20)),
-                      child: Icon(Icons.delete_sweep_rounded, color: Colors.red[700], size: 28),
-                    ),
-                    onDismissed: (direction) {
-                      setState(() {
-                        _transacoesGlobais.removeWhere((t) => t.id == transacao.id);
-                        _salvarDados();
-                      });
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[50],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                        leading: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: transacao.formaPagamento == 'Vale Alimentação' ? Colors.orange[50] : (transacao.isReceita ? Colors.green[50] : Colors.red[50]),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            transacao.formaPagamento == 'Vale Alimentação' ? Icons.fastfood_rounded : (_iconesCategoria[transacao.categoria] ?? Icons.category_rounded), 
-                            color: transacao.formaPagamento == 'Vale Alimentação' ? Colors.orange[700] : (transacao.isReceita ? Colors.green[700] : Colors.red[700]),
-                            size: 18,
-                          ),
-                        ),
-                        title: Text(transacao.titulo, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14)),
-                        subtitle: Wrap(
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          spacing: 6.0, 
-                          children: [
-                            Text('${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w500)),
-                            if (isAgendado)
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange[50], 
-                                  borderRadius: BorderRadius.circular(6), 
-                                  border: Border.all(color: Colors.orange[200]!)
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.schedule_rounded, size: 10, color: Colors.orange[700]),
-                                    const SizedBox(width: 4),
-                                    Text('AGENDADO', style: TextStyle(color: Colors.orange[700], fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                  ],
-                                ),
-                              ),
-
-                            if (transacao.formaPagamento == 'Vale Alimentação')
-                              Icon(Icons.fastfood, size: 11, color: Colors.orange[700]),
-                            if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
-                              Icon(Icons.credit_card_rounded, size: 11, color: Colors.blue[700]),
-                          ],
-                        ),
-                        trailing: Text(
-                          '${transacao.isReceita ? '+' : '-'} ${_formatador.format(transacao.valor)}',
-                          style: TextStyle(color: corValor, fontWeight: FontWeight.bold, fontSize: 14),
-                        ),
-                        onTap: () async {
-                          final transacaoEditada = await Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => TelaCadastro(transacaoParaEdicao: transacao)),
-                          );
-                          if (transacaoEditada != null) {
-                            setState(() {
-                              final indexOriginal = _transacoesGlobais.indexWhere((t) => t.id == transacaoEditada.id);
-                              if (indexOriginal != -1) {
-                                _transacoesGlobais[indexOriginal] = transacaoEditada;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Slidable(
+                      key: Key(transacao.id),
+                      
+                      endActionPane: ActionPane(
+                        motion: const StretchMotion(),
+                        extentRatio: 0.22,
+                        children: [
+                          SlidableAction(
+                            onPressed: (context) {
+                              setState(() {
+                                _transacoesGlobais.removeWhere((t) => t.id == transacao.id);
                                 _salvarDados();
+                              });
+                            },
+                            backgroundColor: Colors.red[600]!,
+                            foregroundColor: Colors.white,
+                            icon: Icons.delete_sweep_rounded,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ],
+                      ),
+
+                      startActionPane: isAgendado
+                          ? ActionPane(
+                              motion: const StretchMotion(),
+                              extentRatio: 0.22,
+                              children: [
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    setState(() {
+                                      final indexOriginal = _transacoesGlobais.indexWhere((t) => t.id == transacao.id);
+                                      if (indexOriginal != -1) {
+                                        _transacoesGlobais[indexOriginal] = Transacao(
+                                          id: transacao.id,
+                                          titulo: transacao.titulo,
+                                          valor: transacao.valor,
+                                          isReceita: transacao.isReceita,
+                                          categoria: transacao.categoria,
+                                          data: transacao.data,
+                                          formaPagamento: transacao.formaPagamento,
+                                          statusPago: true, 
+                                        );
+                                        _salvarDados();
+                                      }
+                                    });
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                      content: Text(
+                                        transacao.isReceita ? 'Recebimento antecipado efetuado! ✅' : 'Pagamento antecipado efetuado! ✅', 
+                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+                                      ), 
+                                      backgroundColor: Colors.green[700], 
+                                      behavior: SnackBarBehavior.floating,
+                                    ));
+                                  },
+                                  backgroundColor: Colors.green[600]!,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.check_circle_rounded,
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ],
+                            )
+                          : null,
+
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () async {
+                              final transacaoEditada = await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => TelaCadastro(transacaoParaEdicao: transacao)),
+                              );
+                              if (transacaoEditada != null) {
+                                setState(() {
+                                  final indexOriginal = _transacoesGlobais.indexWhere((t) => t.id == transacaoEditada.id);
+                                  if (indexOriginal != -1) {
+                                    _transacoesGlobais[indexOriginal] = transacaoEditada;
+                                    _salvarDados();
+                                  }
+                                });
                               }
-                            });
-                          }
-                        },
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: transacao.formaPagamento == 'Vale Alimentação' ? Colors.orange[50] : (transacao.isReceita ? Colors.green[50] : Colors.red[50]),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      transacao.formaPagamento == 'Vale Alimentação' ? Icons.fastfood_rounded : (_iconesCategoria[transacao.categoria] ?? Icons.category_rounded), 
+                                      color: transacao.formaPagamento == 'Vale Alimentação' ? Colors.orange[700] : (transacao.isReceita ? Colors.green[700] : Colors.red[700]),
+                                      size: 18,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(transacao.titulo, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black87, fontSize: 14)),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                '${transacao.categoria} • ${DateFormat('dd/MM').format(transacao.data)}', 
+                                                style: TextStyle(color: Colors.grey[500], fontSize: 11, fontWeight: FontWeight.w500),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            if (transacao.formaPagamento == 'Vale Alimentação')
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 4.0),
+                                                child: Icon(Icons.fastfood, size: 11, color: Colors.orange[700]),
+                                              ),
+                                            if (!transacao.isReceita && transacao.formaPagamento == 'Cartão de Crédito')
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 4.0),
+                                                child: Icon(Icons.credit_card_rounded, size: 11, color: Colors.blue[700]),
+                                              ),
+                                          ],
+                                        ),
+                                        if (isAgendado)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 6.0),
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.orange[50], 
+                                                borderRadius: BorderRadius.circular(6), 
+                                                border: Border.all(color: Colors.orange[200]!)
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(Icons.schedule_rounded, size: 10, color: Colors.orange[700]),
+                                                  const SizedBox(width: 4),
+                                                  Text('AGENDADO', style: TextStyle(color: Colors.orange[700], fontSize: 9, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+
+                                  ConstrainedBox(
+                                    constraints: const BoxConstraints(maxWidth: 100), 
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
+                                      alignment: Alignment.centerRight,
+                                      child: Text(
+                                        '${transacao.isReceita ? '+' : '-'} ${_formatador.format(transacao.valor)}',
+                                        style: TextStyle(color: corValor, fontWeight: FontWeight.bold, fontSize: 14),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   );
