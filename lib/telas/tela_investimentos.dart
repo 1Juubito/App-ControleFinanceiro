@@ -4,6 +4,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import '../componentes/grafico_investimentos.dart';
 import '../modelos/ativo_model.dart'; 
 import 'tela_cadastro_investimento.dart';
+import '../servicos/api_bolsa.dart';
 
 class TelaInvestimentos extends StatefulWidget {
   const TelaInvestimentos({super.key});
@@ -47,107 +48,126 @@ class _TelaInvestimentosState extends State<TelaInvestimentos> {
             return AtivoModel.fromMap(doc.data() as Map<String, dynamic>);
           }).toList();
 
-          double patrimonioTotalReal = 0;
-          for (var ativo in listaAtivos) {
-            patrimonioTotalReal += ativo.totalInvestido;
-          }
+          final listaTickers = listaAtivos.map((a) => a.ticker).toList();
 
-          final List<Color> coresPaleta = [
-            Colors.blueAccent,
-            Colors.greenAccent,
-            Colors.amberAccent,
-            Colors.deepPurpleAccent,
-            Colors.redAccent,
-          ];
-
-          return SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  padding: const EdgeInsets.symmetric(vertical: 24),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05), 
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withOpacity(0.1)),
+          return FutureBuilder<Map<String, double>>(
+            future: ApiBolsa.buscarPrecosAtuais(listaTickers),
+            builder: (context, apiSnapshot) {
+              
+              if (apiSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircularProgressIndicator(color: Colors.blueAccent),
+                      SizedBox(height: 16),
+                      Text('Sincronizando com a B3...', style: TextStyle(color: Colors.white54)),
+                    ],
                   ),
-                  child: GraficoInvestimentos(
-                    patrimonioTotal: patrimonioTotalReal, 
-                    listaAtivos: listaAtivos,
-                  ),
-                ),
+                );
+              }
 
-                const SizedBox(height: 24),
+              final precosMercado = apiSnapshot.data ?? {};
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Text(
-                    'Meus Ativos',
-                    style: TextStyle(
-                      color: Colors.green[200],
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+              double patrimonioTotalReal = 0;
+              for (var ativo in listaAtivos) {
+                final precoAtual = precosMercado[ativo.ticker] ?? ativo.precoMedio;
+                patrimonioTotalReal += (ativo.quantidade * precoAtual);
+              }
+
+              final List<Color> coresPaleta = [
+                Colors.blueAccent,
+                Colors.greenAccent,
+                Colors.amberAccent,
+                Colors.deepPurpleAccent,
+                Colors.redAccent,
+              ];
+
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.05), 
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      ),
+                      child: GraficoInvestimentos(
+                        patrimonioTotal: patrimonioTotalReal, 
+                        listaAtivos: listaAtivos,
+                      ),
                     ),
-                  ),
-                ),
 
-                const SizedBox(height: 12),
+                    const SizedBox(height: 24),
 
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: listaAtivos.length,
-                  itemBuilder: (context, index) {
-                    final ativo = listaAtivos[index];
-                    final corCard = coresPaleta[index % coresPaleta.length];
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
-                      child: Slidable(
-                        key: Key(ativo.ticker),
-                        endActionPane: ActionPane(
-                          motion: const StretchMotion(),
-                          extentRatio: 0.25,
-                          children: [
-                            SlidableAction(
-                              onPressed: (context) {
-                                FirebaseFirestore.instance
-                                    .collection('ativos')
-                                    .doc(ativo.ticker)
-                                    .delete();
-
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('${ativo.ticker} excluído com sucesso.'),
-                                    backgroundColor: Colors.red[700],
-                                  ),
-                                );
-                              },
-                              backgroundColor: Colors.red[600]!,
-                              foregroundColor: Colors.white,
-                              icon: Icons.delete_rounded,
-                              label: 'Excluir',
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ],
-                        ),
-                        child: _buildAtivoCard(
-                          ticker: ativo.ticker,
-                          nome: ativo.tipo, 
-                          quantidade: ativo.quantidade.toInt(),
-                          total: ativo.totalInvestido,
-                          cor: corCard,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Text(
+                        'Meus Ativos',
+                        style: TextStyle(
+                          color: Colors.green[200],
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.2,
                         ),
                       ),
-                    );
-                  },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: listaAtivos.length,
+                      itemBuilder: (context, index) {
+                        final ativo = listaAtivos[index];
+                        final corCard = coresPaleta[index % coresPaleta.length];
+                        
+                        final precoAtual = precosMercado[ativo.ticker] ?? ativo.precoMedio;
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12, left: 16, right: 16),
+                          child: Slidable(
+                            key: Key(ativo.ticker),
+                            endActionPane: ActionPane(
+                              motion: const StretchMotion(),
+                              extentRatio: 0.25,
+                              children: [
+                                SlidableAction(
+                                  onPressed: (context) {
+                                    FirebaseFirestore.instance
+                                        .collection('ativos')
+                                        .doc(ativo.ticker)
+                                        .delete();
+                                  },
+                                  backgroundColor: Colors.red[600]!,
+                                  foregroundColor: Colors.white,
+                                  icon: Icons.delete_rounded,
+                                  label: 'Excluir',
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ],
+                            ),
+                            child: _buildAtivoCard(
+                              ticker: ativo.ticker,
+                              quantidade: ativo.quantidade.toInt(),
+                              precoMedio: ativo.precoMedio,
+                              precoAtual: precoAtual,
+                              cor: corCard,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    const SizedBox(height: 40),
+                  ],
                 ),
-                
-                const SizedBox(height: 40),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
@@ -155,21 +175,10 @@ class _TelaInvestimentosState extends State<TelaInvestimentos> {
         backgroundColor: Colors.greenAccent[400],
         child: const Icon(Icons.add_rounded, color: Colors.black, size: 32),
         onPressed: () async {
-          final novoAtivo = await Navigator.push(
+          await Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const TelaCadastroInvestimento(),
-            ),
+            MaterialPageRoute(builder: (context) => const TelaCadastroInvestimento()),
           );
-          
-          if (novoAtivo == true) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: const Text('Investimento registrado com sucesso!'),
-                backgroundColor: Colors.green[700],
-              ),
-            );
-          }
         },
       ),
     );
@@ -177,11 +186,20 @@ class _TelaInvestimentosState extends State<TelaInvestimentos> {
 
   Widget _buildAtivoCard({
     required String ticker,
-    required String nome,
     required int quantidade,
-    required double total,
+    required double precoMedio,
+    required double precoAtual,
     required Color cor,
   }) {
+    final double totalInvestido = quantidade * precoMedio;
+    final double totalAtual = quantidade * precoAtual;
+    final double variacaoValor = totalAtual - totalInvestido;
+    final double variacaoPercentual = (precoMedio > 0) ? (variacaoValor / totalInvestido) * 100 : 0;
+
+    final bool noLucro = variacaoValor >= 0;
+    final Color corVariacao = noLucro ? Colors.greenAccent : Colors.redAccent[400]!;
+    final IconData iconeVariacao = noLucro ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -193,10 +211,7 @@ class _TelaInvestimentosState extends State<TelaInvestimentos> {
           Container(
             width: 12,
             height: 40,
-            decoration: BoxDecoration(
-              color: cor,
-              borderRadius: BorderRadius.circular(6),
-            ),
+            decoration: BoxDecoration(color: cor, borderRadius: BorderRadius.circular(6)),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -204,15 +219,25 @@ class _TelaInvestimentosState extends State<TelaInvestimentos> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(ticker, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                Text(nome, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                Text('$quantidade cotas', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text('R\$ ${total.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              Text('$quantidade cotas', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+              Text('R\$ ${totalAtual.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              
+              Row(
+                children: [
+                  Icon(iconeVariacao, color: corVariacao, size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${variacaoPercentual.abs().toStringAsFixed(2)}%', 
+                    style: TextStyle(color: corVariacao, fontSize: 12, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
