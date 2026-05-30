@@ -72,3 +72,7 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
    ```bash
    flutter run
    ```
+
+   ## 👨‍💻 Autor
+
+**Allan Crisanto** *Técnico de TI & Estudante de Análise e Desenvolvimento de Sistemas (UNINTER)*
