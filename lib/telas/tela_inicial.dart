@@ -50,6 +50,23 @@ class _TelaInicialState extends State<TelaInicial> {
     'Outros': Icons.category_rounded,
   };
 
+  IconData _iconeNuvem = Icons.cloud_done_rounded;
+  Color _corNuvem = Colors.greenAccent;
+
+  void _piscarNuvemSincronizacao() async {
+    setState(() {
+      _iconeNuvem = Icons.cloud_sync_rounded; 
+      _corNuvem = Colors.white70;
+    });
+    
+    await Future.delayed(const Duration(milliseconds: 1500));
+    
+    setState(() {
+      _iconeNuvem = Icons.cloud_done_rounded; 
+      _corNuvem = Colors.greenAccent;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -163,6 +180,7 @@ if (transacaoRecebida != null) {
       for (var transacao in novasTransacoes) {
         NotificacaoService().agendarNotificacao(transacao);
       }
+      _piscarNuvemSincronizacao();
     }
   }
 
@@ -435,6 +453,7 @@ if (transacaoRecebida != null) {
                                 _transacoesGlobais.removeWhere((t) => t.id == transacao.id);
                                 _salvarDados();
                               });
+                              _piscarNuvemSincronizacao();
                             },
                             backgroundColor: Colors.red[600]!,
                             foregroundColor: Colors.white,
@@ -632,11 +651,29 @@ if (transacaoRecebida != null) {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          Row(
                             children: [
-                              const Text('Olá, Allan', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                              Text('Seu controle de gastos', style: TextStyle(color: Colors.green[200], fontSize: 13)),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Olá Allan', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                                  Text('Seu controle de gastos', style: TextStyle(color: Colors.green[200], fontSize: 13)),
+                                ],
+                              ),
+                              const SizedBox(width: 12),
+                              
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 400),
+                                transitionBuilder: (Widget child, Animation<double> animation) {
+                                  return FadeTransition(opacity: animation, child: child);
+                                },
+                                child: Icon(
+                                  _iconeNuvem,
+                                  key: ValueKey<IconData>(_iconeNuvem), 
+                                  color: _corNuvem,
+                                  size: 26, 
+                                ),
+                              ),
                             ],
                           ),
                           Container(
@@ -644,7 +681,7 @@ if (transacaoRecebida != null) {
                             child: Row(
                               children: [
                                 IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 22), onPressed: () => _mudarMes(-1)),
-                                Text('${_nomesMeses[_mesAtual.month - 1]}', style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
+                                Text(_nomesMeses[_mesAtual.month - 1], style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
                                 IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white, size: 22), onPressed: () => _mudarMes(1)),
                               ],
                             ),
@@ -652,7 +689,6 @@ if (transacaoRecebida != null) {
                         ],
                       ),
                       const SizedBox(height: 24),
-
                       Row(
                         children: [
                           Expanded(
