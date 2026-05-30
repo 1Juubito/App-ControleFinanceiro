@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart'; 
 
 import 'telas/tela_bloqueio.dart';
@@ -13,7 +14,10 @@ void main() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    debugPrint("🔥 Firebase conectado com sucesso!");
+
+    await FirebaseAuth.instance.signInAnonymously();
+  
+    debugPrint("🔥 Firebase conectado e Autenticação Anônima ativada com sucesso!");
   } catch (e) {
     debugPrint("Erro ao conectar no Firebase: $e");
   }
