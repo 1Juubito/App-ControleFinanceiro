@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
-import 'tela_inicial.dart';
+import 'tela_base.dart';
 
 class TelaBloqueio extends StatefulWidget {
   const TelaBloqueio({super.key});
@@ -42,7 +42,7 @@ Future<void> _autenticar() async {
 
       if (autenticado && mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const TelaInicial()),
+          MaterialPageRoute(builder: (context) => const TelaBase()),
         );
       }
     } on PlatformException catch (e) {
