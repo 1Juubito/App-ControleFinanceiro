@@ -1,6 +1,5 @@
 # 📊 Controle Financeiro (Error404Saldo)
 
-⚠️ **Status do Projeto: Em Desenvolvimento** 🛠️
 
 Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em entregar uma experiência de usuário (UX) de alto nível e arquitetura resiliente. Inspirado nas maiores fintechs do mercado, o projeto abandona formulários monótonos para adotar interações dinâmicas, *Glassmorphism*, *Dark Mode* premium e **sincronização de dados em nuvem** e **cotações do mercado financeiro em tempo real**.
 
@@ -59,7 +58,6 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
 - [x] Sistema de Cofrinhos e Metas de Economia
 - [x] Gráfico interativos (fl_chart) e tela de relatórios mensais.
 - [x] Módulo de Investimentos (Renda Variável)
-- [ ] Em breve: Exportação de Relatórios em PDF/Excel.
 
 ## 💻 Como Rodar o Projeto
 
