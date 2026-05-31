@@ -73,7 +73,7 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
    ```bash
    flutter pub get
    ```
-4. **Configuração de Ambinente (.env): Crie um arquivo chamado **`.env`** na raiz do projeto e adicione o seu token de acesso da Brapi:
+4. **Configuração de Ambinente (.env)**: Crie um arquivo chamado **`.env`** na raiz do projeto e adicione o seu token de acesso da Brapi:
    ```bash
       BRAPI_TOKEN=seu_token_aqui
    ```
