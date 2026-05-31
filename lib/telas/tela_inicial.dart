@@ -78,15 +78,15 @@ class _TelaInicialState extends State<TelaInicial> {
     final box = Hive.box('cofre_financeiro');
     final dados = box.get('transacoes_salvas');
     
-    if (dados != null) {
+    if (dados != null && (dados as List).isNotEmpty) {
       setState(() {
-        _transacoesGlobais = (dados as List).map((item) {
+        _transacoesGlobais = dados.map((item) {
           final mapaConvertido = Map<String, dynamic>.from(item);
           return Transacao.fromJson(mapaConvertido);
         }).toList();
       });
     } else {
-      debugPrint("Hive vazio ou corrompido. Buscando backup no Firebase...");
+      debugPrint("Hive vazio ou recém-instalado. Buscando backup no Firebase...");
       
       try {
         final snapshot = await FirebaseFirestore.instance.collection('transacoes').get();
@@ -97,8 +97,13 @@ class _TelaInicialState extends State<TelaInicial> {
           for (var doc in snapshot.docs) {
             final dadosNuvem = doc.data();
             
-            if (dadosNuvem['data'] is String) {
-              dadosNuvem['data'] = DateTime.parse(dadosNuvem['data']);
+            if (dadosNuvem['data'] != null) {
+              if (dadosNuvem['data'].runtimeType.toString().contains('Timestamp')) {
+                 DateTime dataConvertida = dadosNuvem['data'].toDate();
+                 dadosNuvem['data'] = dataConvertida.toIso8601String();
+              } else if (dadosNuvem['data'] is DateTime) {
+                 dadosNuvem['data'] = (dadosNuvem['data'] as DateTime).toIso8601String();
+              }
             }
             
             transacoesRecuperadas.add(Transacao.fromJson(dadosNuvem));
@@ -110,6 +115,8 @@ class _TelaInicialState extends State<TelaInicial> {
           
           _salvarDados(); 
           debugPrint("Backup do Firebase restaurado com sucesso no Hive!");
+        } else {
+           debugPrint("Nenhuma transação encontrada no Firebase também.");
         }
       } catch (e) {
         debugPrint("Erro crítico ao buscar dados no Firebase: $e");
