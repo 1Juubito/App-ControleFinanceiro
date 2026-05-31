@@ -58,7 +58,7 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
 - [x] Identificação visual inteligente de lançamentos agendados.
 - [x] Sistema de Cofrinhos e Metas de Economia
 - [x] Gráfico interativos (fl_chart) e tela de relatórios mensais.
-- [x] Em breve: Módulo de Investimentos (Renda Variável) e Exportação de PDF/Excel.
+- [x] Módulo de Investimentos (Renda Variável)
 - [ ] Em breve: Exportação de Relatórios em PDF/Excel.
 
 ## 💻 Como Rodar o Projeto
