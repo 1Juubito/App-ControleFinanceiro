@@ -658,38 +658,77 @@ if (transacaoRecebida != null) {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('Olá Allan', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                                  Text('Seu controle de gastos', style: TextStyle(color: Colors.green[200], fontSize: 13)),
-                                ],
-                              ),
-                              const SizedBox(width: 12),
-                              
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 400),
-                                transitionBuilder: (Widget child, Animation<double> animation) {
-                                  return FadeTransition(opacity: animation, child: child);
-                                },
-                                child: Icon(
-                                  _iconeNuvem,
-                                  key: ValueKey<IconData>(_iconeNuvem), 
-                                  color: _corNuvem,
-                                  size: 26, 
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: const Text(
+                                          'Olá Allan', 
+                                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: 0.5), 
+                                        ),
+                                      ),
+                                      FittedBox(
+                                        fit: BoxFit.scaleDown,
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Seu controle de gastos', 
+                                          style: TextStyle(color: Colors.green[200], fontSize: 13), 
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(width: 4),
+                                AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 400),
+                                  transitionBuilder: (Widget child, Animation<double> animation) {
+                                    return FadeTransition(opacity: animation, child: child);
+                                  },
+                                  child: Icon(
+                                    _iconeNuvem,
+                                    key: ValueKey<IconData>(_iconeNuvem), 
+                                    color: _corNuvem,
+                                    size: 24, 
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                            ),
                           ),
                           Container(
                             decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6), 
                             child: Row(
                               children: [
-                                IconButton(icon: const Icon(Icons.chevron_left, color: Colors.white, size: 22), onPressed: () => _mudarMes(-1)),
-                                Text(_nomesMeses[_mesAtual.month - 1], style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold)),
-                                IconButton(icon: const Icon(Icons.chevron_right, color: Colors.white, size: 22), onPressed: () => _mudarMes(1)),
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(), 
+                                  icon: const Icon(Icons.chevron_left, color: Colors.white, size: 22), 
+                                  onPressed: () => _mudarMes(-1)
+                                ),
+                                
+                                SizedBox(
+                                  width: 70, 
+                                  child: Center(
+                                    child: Text(
+                                      _nomesMeses[_mesAtual.month - 1], 
+                                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)
+                                    ),
+                                  ),
+                                ),
+                                
+                                IconButton(
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(), 
+                                  icon: const Icon(Icons.chevron_right, color: Colors.white, size: 22), 
+                                  onPressed: () => _mudarMes(1)
+                                ),
                               ],
                             ),
                           )
