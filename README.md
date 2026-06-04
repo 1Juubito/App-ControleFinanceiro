@@ -86,4 +86,4 @@ Um aplicativo de gestão financeira pessoal desenvolvido em Flutter, focado em e
 
    ## 👨‍💻 Autor
 
-**Allan Crisanto** *Técnico de TI & Estudante de Análise e Desenvolvimento de Sistemas (UNINTER)*
+**Allan Crisanto** *Técnico de TI, Graduado em ADS pela Uninter e Pós-graduando Cibersegurança Ofensiva pela FIAP*
