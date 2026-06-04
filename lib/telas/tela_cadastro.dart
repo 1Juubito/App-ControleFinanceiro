@@ -28,6 +28,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
   bool _isReceita = false; 
   DateTime _dataSelecionada = DateTime.now();
   
+  bool _contaJaFoiPaga = false;
+  
   final List<String> _categoriasDespesa = [
     'Alimentação', 'Restaurante', 'Lanche', 'Padaria', 'Supermercado',
     'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Jogos', 
@@ -77,6 +79,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
       _categoriaSelecionada = widget.transacaoParaEdicao!.categoria;
       _dataSelecionada = widget.transacaoParaEdicao!.data;
       _formaPagamento = widget.transacaoParaEdicao!.formaPagamento;
+      _contaJaFoiPaga = widget.transacaoParaEdicao!.statusPago; 
     } else {
       if (widget.iniciarComoReceita != null) {
         _isReceita = widget.iniciarComoReceita!;
@@ -85,6 +88,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
       if (widget.iniciarFormaPagamento != null) {
         _formaPagamento = widget.iniciarFormaPagamento!;
       }
+      _contaJaFoiPaga = _formaPagamento != 'Cartão de Crédito'; 
     }
   }
 
@@ -265,10 +269,33 @@ class _TelaCadastroState extends State<TelaCadastro> {
                           ],
                       selected: {_formaPagamento},
                       onSelectionChanged: (Set<String> selecao) {
-                        setState(() { _formaPagamento = selecao.first; });
+                        setState(() { 
+                          _formaPagamento = selecao.first; 
+                          _contaJaFoiPaga = _formaPagamento != 'Cartão de Crédito';
+                        });
                       },
                     ),
                   ),
+                  
+                  const SizedBox(height: 16),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(_isReceita ? 'Esse valor já foi recebido?' : 'Essa despesa já foi paga?', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    subtitle: Text(
+                      _contaJaFoiPaga 
+                        ? 'Entrará no cálculo de "Já pago"' 
+                        : 'Ficará aguardando como "Pendente"',
+                      style: TextStyle(fontSize: 13, color: _contaJaFoiPaga ? Colors.green : Colors.orange),
+                    ),
+                    value: _contaJaFoiPaga,
+                    activeColor: Colors.green,
+                    onChanged: (bool valor) {
+                      setState(() {
+                        _contaJaFoiPaga = valor;
+                      });
+                    },
+                  ),
+                  
                   const SizedBox(height: 24),
 
                   const Text('Categoria', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87)),
@@ -403,6 +430,8 @@ class _TelaCadastroState extends State<TelaCadastro> {
 
                 String idGerado = isEditando ? widget.transacaoParaEdicao!.id : DateTime.now().add(Duration(milliseconds: i)).toString();
 
+                bool statusFinal = (i == 0) ? _contaJaFoiPaga : false;
+
                 transacoesGeradas.add(Transacao(
                   id: idGerado,
                   titulo: tituloFinal,
@@ -411,6 +440,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   categoria: _categoriaSelecionada,
                   data: dataFutura, 
                   formaPagamento: _formaPagamento, 
+                  statusPago: statusFinal,
                 ));
 
                 FirebaseFirestore.instance.collection('transacoes').doc(idGerado).set({
@@ -421,6 +451,7 @@ class _TelaCadastroState extends State<TelaCadastro> {
                   'categoria': _categoriaSelecionada,
                   'data': dataFutura.toIso8601String(),
                   'formaPagamento': _formaPagamento,
+                  'statusPago': statusFinal,
                 });
               }
               Navigator.pop(context, isEditando ? transacoesGeradas.first : transacoesGeradas);

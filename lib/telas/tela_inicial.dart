@@ -825,6 +825,8 @@ if (transacaoRecebida != null) {
                   ),
                 ),
 
+                _buildResumoDespesas(),
+
                 Padding(
                   padding: const EdgeInsets.fromLTRB(28.0, 16.0, 28.0, 4.0),
                   child: Row(
@@ -922,6 +924,93 @@ if (transacaoRecebida != null) {
             ),
           ),
         ],
+      ),
+    );
+  }
+  Widget _buildResumoDespesas() {
+    double totalDespesas = 0;
+    double totalPago = 0;
+
+    for (var t in _transacoesGlobais) {
+      if (!t.isReceita && t.data.month == _mesAtual.month && t.data.year == _mesAtual.year) {
+        totalDespesas += t.valor;
+        if (t.statusPago) {
+          totalPago += t.valor;
+        }
+      }
+    }
+
+    double totalPendente = totalDespesas - totalPago;
+    double progresso = totalDespesas > 0 ? (totalPago / totalDespesas) : 0.0;
+
+    if (totalDespesas == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Status das Despesas',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+            ),
+            const SizedBox(height: 16),
+            
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: LinearProgressIndicator(
+                value: progresso,
+                minHeight: 12,
+                backgroundColor: Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  progresso == 1.0 ? Colors.green : Colors.orange,
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Já pago', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    Text(
+                      _formatador.format(totalPago),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.green),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Falta pagar', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                    Text(
+                      _formatador.format(totalPendente),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.orange),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
