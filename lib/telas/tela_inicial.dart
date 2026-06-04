@@ -21,7 +21,9 @@ class TelaInicial extends StatefulWidget {
 class _TelaInicialState extends State<TelaInicial> {
   List<Transacao> _transacoesGlobais = [];
   final NumberFormat _formatador = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
-  String _filtroCategoriaAtivo = 'Todas';
+  
+  String _termoBusca = '';
+  String _filtroStatus = 'Todos';
   
   DateTime _mesAtual = DateTime.now();
   final List<String> _nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -160,7 +162,8 @@ class _TelaInicialState extends State<TelaInicial> {
   void _mudarMes(int incremento) {
     setState(() {
       _mesAtual = DateTime(_mesAtual.year, _mesAtual.month + incremento, 1);
-      _filtroCategoriaAtivo = 'Todas'; 
+      _termoBusca = '';
+      _filtroStatus = 'Todos'; 
     });
   }
 
@@ -396,9 +399,15 @@ if (transacaoRecebida != null) {
   }
 
   Widget _buildCardLancamentos() {
-    final listaFiltrada = _filtroCategoriaAtivo == 'Todas' 
-        ? _transacoesDoMes 
-        : _transacoesDoMes.where((t) => t.categoria == _filtroCategoriaAtivo).toList();
+    var listaFiltrada = _transacoesDoMes.where((t) {
+      if (_termoBusca.isNotEmpty && !t.titulo.toLowerCase().contains(_termoBusca)) {
+        return false;
+      }
+      if (_filtroStatus == 'Pendentes' && t.statusPago) return false;
+      if (_filtroStatus == 'Pagos' && !t.statusPago) return false;
+
+      return true;
+    }).toList();
 
     listaFiltrada.sort((a, b) => b.data.compareTo(a.data));
 
@@ -426,7 +435,7 @@ if (transacaoRecebida != null) {
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 32),
                 child: Center(
-                  child: Text('Nenhum lançamento por aqui.', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  child: Text('Nenhum lançamento encontrado.', style: TextStyle(color: Colors.grey, fontSize: 14)),
                 ),
               )
             else
@@ -850,29 +859,7 @@ if (transacaoRecebida != null) {
                   ),
                 ),
                 
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                  child: Row(
-                    children: ['Todas', 'Alimentação', 'Restaurante', 'Lanche', 'Padaria', 'Supermercado', 'Transporte', 'Moradia', 'Saúde', 'Lazer', 'Jogos', 'Compras Online', 'Assinaturas', 'Educação', 'Cuidados Pessoais', 'Crédito Vale', 'Outros'].map((categoria) {
-                      final isSelecionado = _filtroCategoriaAtivo == categoria;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: FilterChip(
-                          label: Text(categoria),
-                          selected: isSelecionado,
-                          selectedColor: Colors.green[50],
-                          labelStyle: TextStyle(color: isSelecionado ? Colors.green[800] : Colors.grey[700]),
-                          checkmarkColor: Colors.green[700],
-                          backgroundColor: Colors.white,
-                          side: BorderSide(color: isSelecionado ? Colors.green[300]! : Colors.grey[200]!),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                          onSelected: (selecionado) { setState(() { _filtroCategoriaAtivo = selecionado ? categoria : 'Todas'; }); },
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+                _buildCentroDeComando(),
 
                 _buildCardMetas(),
                 _buildCardLancamentos(),
@@ -927,6 +914,7 @@ if (transacaoRecebida != null) {
       ),
     );
   }
+  
   Widget _buildResumoDespesas() {
     double totalDespesas = 0;
     double totalPago = 0;
@@ -1012,6 +1000,70 @@ if (transacaoRecebida != null) {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCentroDeComando() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      child: Column(
+        children: [
+          TextField(
+            onChanged: (valor) {
+              setState(() {
+                _termoBusca = valor.toLowerCase();
+              });
+            },
+            decoration: InputDecoration(
+              hintText: 'Pesquisar lançamento...',
+              prefixIcon: const Icon(Icons.search, color: Colors.grey),
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(vertical: 0),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildChipStatus('Todos'),
+              _buildChipStatus('Pendentes'),
+              _buildChipStatus('Pagos'),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChipStatus(String titulo) {
+    final isSelecionado = _filtroStatus == titulo;
+    return ChoiceChip(
+      label: Text(
+        titulo,
+        style: TextStyle(
+          color: isSelecionado ? Colors.white : Colors.grey[700],
+          fontWeight: isSelecionado ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelecionado,
+      selectedColor: Colors.black87,
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: isSelecionado ? Colors.transparent : Colors.grey[300]!),
+      ),
+      onSelected: (bool selecionado) {
+        if (selecionado) {
+          setState(() {
+            _filtroStatus = titulo;
+          });
+        }
+      },
     );
   }
 }
